@@ -1,8 +1,13 @@
-from fastapi import Request, HTTPException
 
-async def verify_api_key(request: Request, call_next):
-    api_key = request.headers.get("x-api-key")
-    if api_key != "expected_key":
-        raise HTTPException(status_code=403, detail="Invalid API Key")
-    response = await call_next(request)
-    return response
+from fastapi import HTTPException, status
+
+def require_authentication() -> None:
+    """
+    Authentication dependency.
+
+    Supabase authentication will be integrated here.
+    """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Authentication is not configured yet",
+    )
