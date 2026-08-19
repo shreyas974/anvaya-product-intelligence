@@ -9,6 +9,7 @@ import {
   ValidationStatus,
 } from '@/components/ingestion/FileValidationSummary';
 import { RawDataPreview } from '@/components/ingestion/RawDataPreview';
+import { startIngestion } from '@/services/ingestion.service';
 
 interface PreviewRow {
   [key: string]: string | number | null;
@@ -26,6 +27,9 @@ export function IngestionPage({
 
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<PreviewRow[]>([]);
+  const [isIngesting, setIsIngesting] = useState(false);
+const [ingestionMessage, setIngestionMessage] = useState<string | null>(null);
+  
 
   const handleFileSelected = async (file: File) => {
     setSelectedFile(file);
@@ -102,6 +106,31 @@ if (records.length === 0) {
     setRows(parsedRows);
     setValidationStatus('valid');
   };
+    const handleStartIngestion = async () => {
+    if (!selectedFile || validationStatus !== 'valid') {
+      return;
+    }
+
+    setIsIngesting(true);
+    setIngestionMessage(null);
+
+    try {
+      const result = await startIngestion({
+        fileName: selectedFile.name,
+        fileType: selectedFile.name.toLowerCase().endsWith('.json')
+          ? 'json'
+          : 'csv',
+        rowCount: rows.length,
+        columnCount: headers.length,
+      });
+
+      setIngestionMessage(result.message);
+    } catch {
+      setIngestionMessage('Failed to start ingestion.');
+    } finally {
+      setIsIngesting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -149,11 +178,17 @@ if (records.length === 0) {
 
             {validationStatus === 'valid' && (
               <div className="flex justify-end">
-                <Button>
-                  <UploadCloud className="mr-2 h-4 w-4" />
-                  Start Ingestion
+                <Button onClick={handleStartIngestion} disabled={isIngesting}>
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                {isIngesting ? 'Starting Ingestion...' : 'Start Ingestion'}
                 </Button>
               </div>
+            )}
+            {ingestionMessage && (
+                <p className="text-right text-sm text-green-600">
+                    {ingestionMessage}
+                </p>
+
             )}
           </>
         )}
