@@ -59,35 +59,3 @@ def remove_product(
     product = find_product(db, product_id)
 
     delete_product(db, product)
-
-    return product
-
-
-def add_product(
-    db: Session,
-    product_data: ProductCreate,
-) -> Product:
-    return create_product(db, product_data)
-
-
-def edit_product(
-    db: Session,
-    product_id: int,
-    product_data: ProductUpdate,
-) -> Product:
-    product = find_product(db, product_id)
-
-    return update_product(
-        db,
-        product,
-        product_data,
-    )
-
-
-def remove_product(
-    db: Session,
-    product_id: int,
-) -> None:
-    product = find_product(db, product_id)
-
-    delete_product(db, product)
