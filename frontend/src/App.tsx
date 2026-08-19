@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { IngestionPage } from '@/pages/Ingestion/IngestionPage';
+import { ProductsPage } from '@/pages/Products/ProductsPage';
 import { MainLayout } from '@/layouts/MainLayout';
 import { NavigationSection } from '@/layouts/Sidebar';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -21,7 +22,9 @@ export default function App() {
 )}
 
 {/* Placeholder sections for Products, Quality, Intelligence */}
-{activeSection !== 'overview' && activeSection !== 'ingestion' && (
+      {activeSection === 'products' && <ProductsPage />}
+
+{activeSection !== 'overview' && activeSection !== 'ingestion' && activeSection !== 'products' && (
         <div className="space-y-6">
           <PageHeader
             title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
