@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { IngestionPage } from '@/pages/Ingestion/IngestionPage';
 import { MainLayout } from '@/layouts/MainLayout';
 import { NavigationSection } from '@/layouts/Sidebar';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -15,9 +16,12 @@ export default function App() {
       {activeSection === 'overview' && (
         <DashboardPage onNavigate={setActiveSection} />
       )}
+{activeSection === 'ingestion' && (
+  <IngestionPage onBack={() => setActiveSection('overview')} />
+)}
 
-      {/* Placeholder sections for Ingestion, Products, Quality, Intelligence */}
-      {activeSection !== 'overview' && (
+{/* Placeholder sections for Products, Quality, Intelligence */}
+{activeSection !== 'overview' && activeSection !== 'ingestion' && (
         <div className="space-y-6">
           <PageHeader
             title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}

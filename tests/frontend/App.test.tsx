@@ -14,11 +14,15 @@ describe('App Integration', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('ANVAYA Product Intelligence')).toBeInTheDocument();
+      expect(
+        screen.getByText('ANVAYA Product Intelligence')
+      ).toBeInTheDocument();
     });
 
     expect(
-      screen.getByText(/Autonomous data cleansing, attribute recovery, and catalog intelligence platform./i)
+      screen.getByText(
+        /Autonomous data cleansing, attribute recovery, and catalog intelligence platform./i
+      )
     ).toBeInTheDocument();
   });
 
@@ -34,25 +38,35 @@ describe('App Integration', () => {
     expect(screen.getByText('AI Enrichment Rate')).toBeInTheDocument();
   });
 
-  it('allows navigation from dashboard to placeholder sections and back', async () => {
+  it('allows navigation from dashboard to Ingestion page and back', async () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('ANVAYA Product Intelligence')).toBeInTheDocument();
+      expect(
+        screen.getByText('ANVAYA Product Intelligence')
+      ).toBeInTheDocument();
     });
 
     // Navigate to Ingestion via sidebar nav button
     const ingestNav = screen.getByRole('button', { name: 'Ingestion' });
     fireEvent.click(ingestNav);
 
-    expect(screen.getByText('Ingestion Module')).toBeInTheDocument();
+    // Verify the real Ingestion page is rendered
+    expect(
+      screen.getByText(/upload your product catalog/i)
+    ).toBeInTheDocument();
 
     // Click Return to Dashboard
-    const returnBtn = screen.getByRole('button', { name: /Return to Dashboard/i });
+    const returnBtn = screen.getByRole('button', {
+      name: /Return to Dashboard/i,
+    });
+
     fireEvent.click(returnBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('ANVAYA Product Intelligence')).toBeInTheDocument();
+      expect(
+        screen.getByText('ANVAYA Product Intelligence')
+      ).toBeInTheDocument();
     });
   });
 });
