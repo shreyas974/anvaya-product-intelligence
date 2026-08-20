@@ -4,44 +4,158 @@
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    /* ANVAYA — Intelligence Lab */
 
-    --card: 224 71% 7%;
-    --card-foreground: 213 31% 91%;
+    --background: 60 9% 4%;
+    --foreground: 60 8% 94%;
 
-    --popover: 224 71% 6%;
-    --popover-foreground: 213 31% 91%;
+    --card: 60 7% 7%;
+    --card-foreground: 60 8% 94%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
+    --popover: 60 7% 6%;
+    --popover-foreground: 60 8% 94%;
 
-    --secondary: 222 47% 15%;
-    --secondary-foreground: 210 40% 98%;
+    /* Intelligence signal */
+    --primary: 72 100% 62%;
+    --primary-foreground: 60 9% 4%;
 
-    --muted: 223 47% 13%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --secondary: 60 5% 12%;
+    --secondary-foreground: 60 8% 91%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 60 5% 11%;
+    --muted-foreground: 60 4% 56%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 72 100% 62%;
+    --accent-foreground: 60 9% 4%;
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 224 76% 48%;
+    --destructive: 4 84% 63%;
+    --destructive-foreground: 60 8% 96%;
 
-    --radius: 0.5rem;
+    --border: 60 5% 17%;
+    --input: 60 5% 17%;
+    --ring: 72 100% 62%;
+
+    --radius: 0.35rem;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+
+    font-feature-settings:
+      "cv02",
+      "cv03",
+      "cv04",
+      "cv11";
+
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.018) 1px,
+        transparent 1px),
+      linear-gradient(90deg,
+        rgba(255, 255, 255, 0.018) 1px,
+        transparent 1px);
+
+    background-size: 48px 48px;
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+@layer components {
+  /*
+   * ANVAYA utility language
+   */
+
+  .anvaya-label {
+    @apply uppercase tracking-[0.18em] text-[10px] font-medium;
+    color: hsl(var(--muted-foreground));
   }
-  body {
-    @apply bg-background text-foreground font-sans;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+
+  .anvaya-mono {
+    font-family:
+      "SFMono-Regular",
+      "Cascadia Code",
+      "Roboto Mono",
+      Consolas,
+      monospace;
+    letter-spacing: -0.02em;
+  }
+
+  .anvaya-signal {
+    color: hsl(var(--primary));
+  }
+
+  .anvaya-surface {
+    background:
+      linear-gradient(135deg,
+        rgba(255, 255, 255, 0.025),
+        rgba(255, 255, 255, 0.008));
+    border: 1px solid hsl(var(--border));
+  }
+
+  .anvaya-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px,
+        transparent 1px),
+      linear-gradient(90deg,
+        rgba(255, 255, 255, 0.025) 1px,
+        transparent 1px);
+
+    background-size: 24px 24px;
+  }
+
+  .anvaya-glow {
+    box-shadow:
+      0 0 0 1px rgba(211, 255, 77, 0.08),
+      0 0 40px rgba(211, 255, 77, 0.04);
+  }
+
+  .anvaya-hover {
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .anvaya-hover:hover {
+    transform: translateY(-1px);
+    border-color: rgba(211, 255, 77, 0.28);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 24px rgba(211, 255, 77, 0.22);
   }
 }

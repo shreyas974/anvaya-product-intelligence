@@ -8,8 +8,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
+  Activity,
+  Circle,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/utils/cn';
 
 export type NavigationSection =
@@ -24,14 +25,15 @@ export interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string | number;
+  code: string;
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'ingestion', label: 'Ingestion', icon: UploadCloud },
-  { id: 'products', label: 'Products', icon: Layers },
-  { id: 'quality', label: 'Quality', icon: ShieldCheck },
-  { id: 'intelligence', label: 'Intelligence', icon: Sparkles },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard, code: '00' },
+  { id: 'ingestion', label: 'Ingestion', icon: UploadCloud, code: '01' },
+  { id: 'products', label: 'Products', icon: Layers, code: '02' },
+  { id: 'quality', label: 'Quality', icon: ShieldCheck, code: '03' },
+  { id: 'intelligence', label: 'Intelligence', icon: Sparkles, code: '04' },
 ];
 
 export interface SidebarProps {
@@ -52,118 +54,215 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-border bg-card/90 backdrop-blur-md transition-all duration-300 select-none z-30',
-        collapsed ? 'w-16' : 'w-64',
+        'relative flex h-full min-h-screen flex-col',
+        'border-r border-border bg-card',
+        'transition-all duration-300 select-none z-30',
+        collapsed ? 'w-[68px]' : 'w-[248px]',
         className
       )}
       aria-label="Main Navigation"
     >
-      {/* Brand Header */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-border/60">
-        {!collapsed && (
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20 flex-shrink-0">
-              <Database className="h-4 w-4" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-sm tracking-wider text-foreground">
-                  ANVAYA
-                </span>
-                <span className="rounded bg-primary/15 px-1 py-0.2 text-[9px] font-semibold text-primary">
-                  AI
-                </span>
-              </div>
-              <span className="text-[10px] text-muted-foreground truncate">
-                Product Intelligence
-              </span>
-            </div>
-          </div>
-        )}
-
-        {collapsed && (
-          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20">
-            <Database className="h-4 w-4" />
-          </div>
-        )}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleCollapse}
-          className={cn(
-            'h-7 w-7 text-muted-foreground hover:text-foreground hidden lg:flex',
-            collapsed && 'hidden'
-          )}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+      {/* Ambient signal */}
+      <div className="pointer-events-none absolute left-0 top-0 h-40 w-full overflow-hidden opacity-60">
+        <div className="absolute -left-16 -top-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
       </div>
 
-      {/* Navigation List */}
-      <nav className="flex-1 space-y-1.5 p-3 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
+      {/* Brand / System Header */}
+      <div
+        className={cn(
+          'relative flex h-[76px] shrink-0 items-center border-b border-border',
+          collapsed ? 'justify-center px-3' : 'px-5'
+        )}
+      >
+        {collapsed ? (
+          <div className="relative flex h-9 w-9 items-center justify-center border border-primary/40 bg-primary/10 text-primary">
+            <Database className="h-4 w-4" />
+            <span className="absolute -right-1 -top-1 h-2 w-2 bg-primary shadow-[0_0_10px_rgba(211,255,77,0.8)]" />
+          </div>
+        ) : (
+          <div className="flex w-full items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center border border-primary/40 bg-primary/10 text-primary">
+                <Database className="h-4 w-4" />
+                <span className="absolute -right-1 -top-1 h-2 w-2 bg-primary shadow-[0_0_10px_rgba(211,255,77,0.8)]" />
+              </div>
 
-          return (
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-bold tracking-[0.16em] text-foreground">
+                    ANVAYA
+                  </span>
+                  <span className="anvaya-mono text-[8px] font-bold text-primary">
+                    AI
+                  </span>
+                </div>
+
+                <div className="anvaya-label mt-1">
+                  Product Intelligence
+                </div>
+              </div>
+            </div>
+
             <button
-              key={item.id}
-              onClick={() => onSectionChange(item.id)}
-              className={cn(
-                'group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-150 relative text-left',
-                isActive
-                  ? 'bg-primary/10 text-primary shadow-xs font-semibold'
-                  : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
-                collapsed && 'justify-center px-0'
-              )}
-              title={collapsed ? item.label : undefined}
-              aria-current={isActive ? 'page' : undefined}
+              type="button"
+              onClick={onToggleCollapse}
+              className="hidden h-7 w-7 items-center justify-center text-muted-foreground transition-colors hover:text-primary lg:flex"
+              aria-label="Collapse sidebar"
             >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-primary" />
-              )}
-              <Icon
-                className={cn(
-                  'h-4 w-4 flex-shrink-0 transition-transform duration-150',
-                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
-                  !collapsed && 'group-hover:scale-105'
-                )}
-              />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-              {!collapsed && item.badge && (
-                <span className="ml-auto rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  {item.badge}
-                </span>
-              )}
+              <ChevronLeft className="h-4 w-4" />
             </button>
-          );
-        })}
+          </div>
+        )}
+      </div>
+
+      {/* System State */}
+      {!collapsed && (
+        <div className="relative mx-4 mt-5 border border-border bg-background/40 px-3 py-2.5">
+          <div className="flex items-center justify-between">
+            <span className="anvaya-label">SYSTEM STATE</span>
+
+            <span className="flex items-center gap-1.5 text-[9px] font-medium text-primary">
+              <span className="h-1.5 w-1.5 animate-pulse bg-primary shadow-[0_0_8px_rgba(211,255,77,0.9)]" />
+              ONLINE
+            </span>
+          </div>
+
+          <div className="mt-2 flex items-center gap-2">
+            <Activity className="h-3 w-3 text-primary" />
+
+            <div className="anvaya-mono text-[10px] text-muted-foreground">
+              PIPELINE / READY
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <nav className="relative flex-1 overflow-y-auto px-3 py-6">
+        {!collapsed && (
+          <div className="anvaya-label mb-3 px-2">
+            MODULES
+          </div>
+        )}
+
+        <div className="space-y-1">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSectionChange(item.id)}
+                title={collapsed ? item.label : undefined}
+                aria-current={isActive ? 'page' : undefined}
+                className={cn(
+                  'group relative flex w-full items-center text-left',
+                  'border transition-all duration-200',
+                  collapsed
+                    ? 'h-11 justify-center border-transparent'
+                    : 'h-12 gap-3 px-3',
+                  isActive
+                    ? 'border-primary/25 bg-primary/[0.07] text-foreground'
+                    : 'border-transparent text-muted-foreground hover:border-border hover:bg-secondary/40 hover:text-foreground'
+                )}
+              >
+                {/* Active signal rail */}
+                {isActive && (
+                  <span className="absolute left-0 top-0 h-full w-[2px] bg-primary shadow-[0_0_12px_rgba(211,255,77,0.8)]" />
+                )}
+
+                {/* Module number */}
+                {!collapsed && (
+                  <span
+                    className={cn(
+                      'anvaya-mono w-5 text-[9px]',
+                      isActive ? 'text-primary' : 'text-muted-foreground/40'
+                    )}
+                  >
+                    {item.code}
+                  </span>
+                )}
+
+                <Icon
+                  className={cn(
+                    'h-[17px] w-[17px] shrink-0 transition-colors',
+                    isActive
+                      ? 'text-primary'
+                      : 'text-muted-foreground group-hover:text-foreground'
+                  )}
+                />
+
+                {!collapsed && (
+                  <>
+                    <span
+                      className={cn(
+                        'flex-1 text-[12px] tracking-wide',
+                        isActive && 'font-medium'
+                      )}
+                    >
+                      {item.label}
+                    </span>
+
+                    {isActive && (
+                      <Circle className="h-1.5 w-1.5 fill-primary text-primary" />
+                    )}
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
-      {/* Footer / Toggle for collapsed state */}
-      <div className="p-3 border-t border-border/60">
-        {collapsed ? (
-          <Button
-            variant="ghost"
-            size="icon"
+      {/* Footer telemetry */}
+      <div className="relative border-t border-border p-4">
+        {!collapsed ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="anvaya-label">ENVIRONMENT</span>
+              <span className="anvaya-mono text-[9px] text-primary">
+                FRONTEND
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground">
+                Platform
+              </span>
+              <span className="anvaya-mono text-[9px] text-foreground/60">
+                UNIHACK 2026
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground">
+                Build
+              </span>
+              <span className="anvaya-mono text-[9px] text-foreground/60">
+                0.1.0
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="mt-2 hidden w-full items-center justify-center gap-2 border border-border py-2 text-[9px] uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary lg:flex"
+            >
+              <ChevronLeft className="h-3 w-3" />
+              Collapse
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
             onClick={onToggleCollapse}
-            className="w-full h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hidden lg:flex"
+            className="hidden h-9 w-full items-center justify-center text-muted-foreground transition-colors hover:text-primary lg:flex"
             aria-label="Expand sidebar"
           >
             <ChevronRight className="h-4 w-4" />
-          </Button>
-        ) : (
-          <div className="rounded-md bg-secondary/40 p-2.5 border border-border/40 text-[11px] space-y-1 text-muted-foreground">
-            <div className="flex items-center justify-between font-medium text-foreground">
-              <span>Branch</span>
-              <span className="text-[10px] font-mono text-primary bg-primary/10 px-1 py-0.2 rounded">
-                feature/frontend
-              </span>
-            </div>
-            <div>Unihack 2026 Platform</div>
-          </div>
+          </button>
         )}
       </div>
     </aside>

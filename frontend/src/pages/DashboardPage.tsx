@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AICopilot } from '@/components/common/AICopilot';
 import {
   Sparkles,
   Database,
@@ -32,6 +33,8 @@ import { EnrichmentStatusResponse } from '@/types/enrichment.types';
 import { Product } from '@/types/product.types';
 import { SemanticDuplicateCluster, CategoryInsight } from '@/types/intelligence.types';
 import { NavigationSection } from '@/layouts/Sidebar';
+import { Brain, ArrowRight, CheckCircle2 } from 'lucide-react';
+
 
 export interface DashboardPageProps {
   onNavigate?: (section: NavigationSection) => void;
@@ -174,6 +177,222 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           change={{ value: '₹63.5k/mo', direction: 'neutral', label: 'est. savings' }}
         />
       </div>
+      {/* AI Executive Insight */}
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-5 shadow-lg">
+        <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+
+            <div className="flex gap-4">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 border border-primary/20">
+                <Brain className="h-5 w-5 text-primary" />
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-foreground">
+                    AI Executive Insight
+                  </h3>
+
+                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-400">
+                    LIVE ANALYSIS
+                  </span>
+                </div>
+
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                  ANVAYA has analyzed your latest catalog telemetry and identified
+                  the areas most likely to improve your catalog health.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              size="sm"
+              onClick={() => onNavigate?.('quality')}
+              className="gap-1.5 shrink-0"
+            >
+              Review Insights
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+
+            <div className="rounded-xl border border-border/50 bg-background/40 p-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Catalog Health
+                </span>
+              </div>
+
+              <p className="mt-2 text-sm font-semibold">
+                {qualityMetrics?.overallQualityScore ?? 88.4}/100
+              </p>
+
+              <p className="mt-1 text-[10px] text-emerald-400">
+                Healthy trajectory
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/50 bg-background/40 p-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Biggest Opportunity
+                </span>
+              </div>
+
+              <p className="mt-2 text-sm font-semibold">
+                Recover missing attributes
+              </p>
+
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {mockMissingAttributeAnomalies.length} areas need attention
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/50 bg-background/40 p-3">
+              <div className="flex items-center gap-2">
+                <Copy className="h-4 w-4 text-amber-400" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Next Recommended Step
+                </span>
+              </div>
+
+              <p className="mt-2 text-sm font-semibold">
+                Review duplicate clusters
+              </p>
+
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {duplicateClusters.length} clusters detected
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      {/* Priority Actions */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">
+              What needs your attention
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              AI-prioritized actions based on your catalog telemetry
+            </p>
+          </div>
+
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {3} priorities
+          </span>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-3">
+
+          {/* Priority 1 */}
+          <div className="group rounded-xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-red-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">
+                  High Priority
+                </span>
+              </div>
+
+              <span className="text-[10px] text-muted-foreground">
+                Quality impact
+              </span>
+            </div>
+
+            <h4 className="mt-3 text-sm font-semibold">
+              Recover missing attributes
+            </h4>
+
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Important product information is missing across several catalog areas.
+            </p>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onNavigate?.('quality')}
+              className="mt-3 h-7 px-0 text-xs text-primary hover:bg-transparent"
+            >
+              Review attributes →
+            </Button>
+          </div>
+
+          {/* Priority 2 */}
+          <div className="group rounded-xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                  Medium Priority
+                </span>
+              </div>
+
+              <span className="text-[10px] text-muted-foreground">
+                Data hygiene
+              </span>
+            </div>
+
+            <h4 className="mt-3 text-sm font-semibold">
+              Review duplicate clusters
+            </h4>
+
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {duplicateClusters.length} semantic clusters may contain overlapping products.
+            </p>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onNavigate?.('intelligence')}
+              className="mt-3 h-7 px-0 text-xs text-primary hover:bg-transparent"
+            >
+              Review duplicates →
+            </Button>
+          </div>
+
+          {/* Priority 3 */}
+          <div className="group rounded-xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-blue-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">
+                  Optimization
+                </span>
+              </div>
+
+              <span className="text-[10px] text-muted-foreground">
+                AI enrichment
+              </span>
+            </div>
+
+            <h4 className="mt-3 text-sm font-semibold">
+              Validate enrichment results
+            </h4>
+
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Review lower-confidence AI recoveries before finalizing your catalog.
+            </p>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onNavigate?.('quality')}
+              className="mt-3 h-7 px-0 text-xs text-primary hover:bg-transparent"
+            >
+              Review enrichment →
+            </Button>
+          </div>
+
+        </div>
+      </div>
 
       {/* Main Two-Column Grid: Quality Score & Enrichment Progress */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -217,6 +436,16 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
         onStartIngestion={() => onNavigate?.('ingestion')}
         onExploreCatalog={() => onNavigate?.('products')}
       />
+
+      <AICopilot
+        qualityScore={qualityMetrics?.overallQualityScore}
+        totalProducts={qualityMetrics?.totalProductsAudited}
+        enrichmentRate={90.7}
+        duplicateClusters={duplicateClusters.length}
+        missingAttributes={mockMissingAttributeAnomalies.length}
+        products={recentProducts}
+      />
     </div>
+
   );
 }
