@@ -493,3 +493,84 @@ class TestQualityAndAttributes:
         assert res_bad.overall_confidence == 0.0
 
 
+# =========================================================================
+# Kimi (Moonshot AI) Integration tests
+# =========================================================================
+class TestKimiIntegration:
+    """Tests for KimiClient and Kimi-powered generative enrichment."""
+
+    def test_kimi_client_fallback_mode(self):
+        """KimiClient should provide robust local fallback when no API key is provided."""
+        from ai.models.kimi_client import KimiClient
+
+        client = KimiClient(api_key=None)
+        assert client.is_available is False
+
+        resp = client.enrich_product_content(
+            mfg_part_num="WDTS7024RZ",
+            part_desc="WDTS7024RZ Dishwasher SS - Display Only",
+            brand_name="Whirlpool",
+            mfg_name="Whirlpool Corporation",
+            category="Appliances > Dishwashers",
+        )
+        assert resp.success is True
+        assert "Whirlpool" in resp.marketing_description
+        assert len(resp.item_features) >= 3
+
+    def test_description_generator_with_kimi_mode(self):
+        """DescriptionGenerator should support use_kimi flag and populate marketing descriptions."""
+        from ai.enrichment.description_generator import DescriptionGenerator
+
+        gen = DescriptionGenerator(use_kimi=True)
+        res = gen.generate(
+            mfg_part_num="WDTS7024RZ",
+            part_desc="WDTS7024RZ Dishwasher SS - Display Only",
+            brand_name="Whirlpool",
+            mfg_name="Whirlpool Corporation",
+            product_name="Dishwasher",
+            dimensions="24 in W x 24 in D",
+            category="Appliances & Consumer Electronics>Kitchen Appliances>Built-In Dishwashers",
+        )
+# =========================================================================
+# FastAPI Deployment tests
+# =========================================================================
+class TestFastAPIEndpoints:
+    """Tests for the deployed FastAPI service."""
+
+    def test_health_endpoint(self):
+        """Health endpoint should return 200 and device status."""
+        from starlette.testclient import TestClient
+        from ai.api.app import app
+
+        client = TestClient(app)
+        response = client.get("/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "healthy"
+        assert "device" in data
+
+    def test_enrich_single_endpoint(self):
+        """Single item enrichment endpoint should return 252 output columns."""
+        from starlette.testclient import TestClient
+        from ai.api.app import app
+
+        client = TestClient(app)
+        payload = {
+            "Mfg_Part_Num": "WDTS7024RZ",
+            "Part_Desc": "WDTS7024RZ Dishwasher SS - Display Only",
+            "E1_Brand": "-- Unbranded --",
+            "Unilog_Brand": "-- No Unilog Brand --",
+            "DIB_Brand": "-- No DIB Brand --",
+            "Part_Manuf": "Appliance Dealers Cooperative (APPDE)",
+        }
+        response = client.post("/api/v1/enrich", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["enriched_record"]["Mfg_Part_Num"] == "WDTS7024RZ"
+        assert data["enriched_record"]["Dept"] == "Appliances"
+        assert len(data["enriched_record"]) == 252
+
+
+
+

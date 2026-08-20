@@ -116,12 +116,12 @@ class EnrichmentPipeline:
       8. ASSEMBLE:  Combine all results into the 252-column output schema
     """
 
-    def __init__(self):
+    def __init__(self, use_kimi: bool = False, kimi_api_key: str | None = None):
         self.cleaner = ProductCleaner()
         self.mfg_matcher = ManufacturerMatcher()
         self.brand_matcher = BrandMatcher()
         self.classifier = CategoryClassifier()
-        self.desc_generator = DescriptionGenerator()
+        self.desc_generator = DescriptionGenerator(use_kimi=use_kimi, kimi_api_key=kimi_api_key)
         self.attr_extractor = AttributeExtractor()
         self.confidence_scorer = ConfidenceScorer()
 
@@ -188,13 +188,15 @@ class EnrichmentPipeline:
             if r.status == "HUMAN_REVIEW_REQUIRED":
                 review_flags[i] = True
 
-        # ----- Stage 5: GENERATE DESCRIPTIONS -----
+        # ----- Stage 5: GENERATE DESCRIPTIONS (Kimi / Generative AI) -----
         short_descs = []
         long_descs = []
         retail_descs = []
         mobile_descs = []
+        marketing_descs = []
+        feature_dict = {f"ITEM_FEATURES_{i}": [None] * input_rows for i in range(1, 21)}
 
-        for _, row in extracted.iterrows():
+        for row_idx, (_, row) in enumerate(extracted.iterrows()):
             gen = self.desc_generator.generate(
                 mfg_part_num=str(row["Mfg_Part_Num"]),
                 part_desc=str(row["Part_Desc"]),
@@ -202,16 +204,23 @@ class EnrichmentPipeline:
                 mfg_name=row.get("MANUFACTURER_NAME"),
                 product_name=row.get("Product Name"),
                 dimensions=row.get("_extracted_dimensions"),
+                category=row.get("Classpath"),
             )
             short_descs.append(gen.short_desc)
             long_descs.append(gen.long_desc1)
             retail_descs.append(gen.retail_desc)
             mobile_descs.append(gen.mobile_desc)
+            marketing_descs.append(gen.marketing_description)
+            for f_idx, feat in enumerate((gen.item_features or [])[:20], start=1):
+                feature_dict[f"ITEM_FEATURES_{f_idx}"][row_idx] = feat
 
         extracted["SHORT_DESC"] = short_descs
         extracted["LONG_DESC1"] = long_descs
         extracted["RETAIL_DESC"] = retail_descs
         extracted["MOBILE_DESC"] = mobile_descs
+        extracted["MARKETING_DESCRIPTION"] = marketing_descs
+        feat_df = pd.DataFrame(feature_dict, index=extracted.index)
+        extracted = pd.concat([extracted, feat_df], axis=1)
 
         # ----- Stage 6: STRUCTURED ATTRIBUTE TRIPLETS -----
         # Pre-allocate dictionary of lists for all 50 triplets
