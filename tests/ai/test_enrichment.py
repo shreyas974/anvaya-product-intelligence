@@ -572,5 +572,75 @@ class TestFastAPIEndpoints:
         assert len(data["enriched_record"]) == 252
 
 
+# =========================================================================
+# Model Training & Hyperparameter Tuning tests
+# =========================================================================
+class TestModelTrainingAndTuning:
+    """Tests for dataset construction, model trainer, and hyperparameter tuning."""
+
+    def test_contrastive_dataset_builder(self):
+        """Contrastive dataset builder should generate valid triplets."""
+        import pandas as pd
+        from ai.training.dataset import build_contrastive_dataset
+
+        df = pd.DataFrame([
+            {"Part_Desc": "Dishwasher SS 24 inch", "Classpath": "Appliances > Dishwashers"},
+            {"Part_Desc": "Sanding Belt 6pc", "Classpath": "Tools > Abrasives"},
+        ])
+        ds = build_contrastive_dataset(df)
+        assert len(ds) == 2
+        item = ds[0]
+        assert "anchor" in item
+        assert "positive" in item
+        assert "negative" in item
+        assert item["positive"] != item["negative"]
+
+    def test_trainer_single_epoch(self):
+        """ProductEmbeddingTrainer should compute loss and train epoch."""
+        import pandas as pd
+        from torch.utils.data import DataLoader
+        from ai.training.dataset import build_contrastive_dataset
+        from ai.training.trainer import ProductEmbeddingTrainer
+
+        df = pd.DataFrame([
+            {"Part_Desc": "Dishwasher SS 24 inch", "Classpath": "Appliances > Dishwashers"},
+            {"Part_Desc": "Sanding Belt 6pc", "Classpath": "Tools > Abrasives"},
+        ])
+        ds = build_contrastive_dataset(df)
+        loader = DataLoader(ds, batch_size=2)
+
+        trainer = ProductEmbeddingTrainer(learning_rate=1e-4)
+        loss = trainer.train_epoch(loader)
+        assert isinstance(loss, float)
+        assert loss >= 0.0
+
+        eval_res = trainer.evaluate(loader)
+        assert "triplet_accuracy" in eval_res
+        assert 0.0 <= eval_res["triplet_accuracy"] <= 1.0
+
+    def test_hyperparameter_tuner_trial(self):
+        """HyperparameterTuner should run grid search and return best config."""
+        import pandas as pd
+        from ai.training.dataset import build_contrastive_dataset
+        from ai.training.tuner import HyperparameterTuner
+
+        df = pd.DataFrame([
+            {"Part_Desc": "Dishwasher SS 24 inch", "Classpath": "Appliances > Dishwashers"},
+            {"Part_Desc": "Sanding Belt 6pc", "Classpath": "Tools > Abrasives"},
+        ])
+        ds = build_contrastive_dataset(df)
+        tuner = HyperparameterTuner(
+            learning_rates=[1e-4],
+            margins=[0.5],
+            batch_sizes=[2],
+            epochs_per_trial=1,
+        )
+        res = tuner.tune(ds, ds)
+        assert res.best_accuracy >= 0.0
+        assert "learning_rate" in res.best_config
+        assert len(res.all_trials) == 1
+
+
+
 
 
