@@ -1,6 +1,6 @@
 from pathlib import Path
-
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from backend.services.pipeline_service import run_document_pipeline
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.auth.dependencies import get_current_user, require_roles
@@ -15,12 +15,17 @@ from backend.controllers.product_controller import (
     remove_product,
 )
 from backend.db.database import get_db
+from backend.schemas.ai import AIGenerateRequest, AIGenerateResponse
 from backend.schemas.document import DocumentProcessResponse
 from backend.schemas.file import FileUploadResponse
 from backend.schemas.product import (
     ProductCreate,
     ProductResponse,
     ProductUpdate,
+)
+from backend.services.ai_service import (
+    AIServiceError,
+    generate_ai_response,
 )
 
 
@@ -75,6 +80,63 @@ def get_current_user_info(
         "user": current_user,
     }
 
+@api_router.post(
+    "/documents/pipeline",
+    response_model=DocumentProcessResponse,
+)
+async def run_document_pipeline_endpoint(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    uploaded = await save_uploaded_file(file)
+
+    file_path = Path("data/uploads") / uploaded["stored_filename"]
+
+    try:
+        return await run_document_pipeline(str(file_path))
+    finally:
+        if file_path.exists():
+            file_path.unlink()
+# ---------------- AI ----------------
+
+@api_router.post(
+    "/ai/generate",
+    response_model=AIGenerateResponse,
+)
+async def generate_ai(
+    request: AIGenerateRequest,
+    current_user: dict = Depends(get_current_user),
+) -> AIGenerateResponse:
+    try:
+        result = await generate_ai_response(request.prompt)
+
+    except AIServiceError as exc:
+        message = str(exc)
+
+        if message == "AI service is not configured":
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=message,
+            ) from exc
+
+        if message == "AI service request timed out":
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail=message,
+            ) from exc
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=message,
+        ) from exc
+
+    return AIGenerateResponse(
+        status="success",
+        response=result,
+    )
+
+
+# ---------------- Products ----------------
 
 @api_router.get(
     "/products",

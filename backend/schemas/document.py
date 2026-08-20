@@ -14,3 +14,5 @@ class DocumentProcessResponse(BaseModel):
     pages: int | None = None
     text: str | None = None
     evidence: list[EvidenceItem] = Field(default_factory=list)
+    ai_response: str | None = None
+    pipeline_status: str | None = None
