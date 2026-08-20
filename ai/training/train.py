@@ -32,7 +32,7 @@ def run_training_pipeline(
     output_dir: str = "ai/models/weights/anvaya_product_embedder",
 ):
     print("=" * 65)
-    print(" 🚀 Anvaya AI Model Training & Fine-Tuning Pipeline")
+    print(" [*] Anvaya AI Model Training & Fine-Tuning Pipeline")
     print("=" * 65)
 
     # 1. Load Data
@@ -60,7 +60,7 @@ def run_training_pipeline(
             epochs_per_trial=1,
         )
         tune_res = tuner.tune(train_ds, val_ds)
-        print(f"[✓] Best Tuning Config: {tune_res.best_config} (Val Acc: {tune_res.best_accuracy:.1%})")
+        print(f"[+] Best Tuning Config: {tune_res.best_config} (Val Acc: {tune_res.best_accuracy:.1%})")
         learning_rate = tune_res.best_config.get("learning_rate", learning_rate)
         margin = tune_res.best_config.get("margin", margin)
         batch_size = tune_res.best_config.get("batch_size", batch_size)
@@ -82,7 +82,7 @@ def run_training_pipeline(
 
     # 5. Save Model Checkpoint
     trainer.save_model(output_dir)
-    print(f"\n[✓] Training Complete! Production weights saved to: {output_dir}")
+    print(f"\n[+] Training Complete! Production weights saved to: {output_dir}")
 
 
 def main():

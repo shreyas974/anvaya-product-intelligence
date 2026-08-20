@@ -11,9 +11,12 @@ HOW:  Checks for CUDA availability (using the RTX 5060 Ti GPU) and provides
       cached getters for SentenceTransformer and HuggingFace pipelines.
 """
 
+import os
 import torch
 from functools import lru_cache
 from typing import Any
+
+WEIGHTS_PATH = os.path.join(os.path.dirname(__file__), "weights", "anvaya_product_embedder")
 
 
 def get_device() -> torch.device:
@@ -28,11 +31,21 @@ def get_sentence_transformer(model_name: str = "all-MiniLM-L6-v2") -> Any:
     """
     Load and cache a SentenceTransformer model on the active device.
     
-    Args:
-        model_name: HuggingFace model identifier.
-                   Defaults to 'all-MiniLM-L6-v2' (fast, lightweight, 384-d).
+    If fine-tuned custom weights are present at ai/models/weights/anvaya_product_embedder,
+    they are automatically loaded for higher domain accuracy.
     """
     from sentence_transformers import SentenceTransformer
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    
+    # Auto-load fine-tuned weights if available
+    if model_name == "all-MiniLM-L6-v2" and os.path.exists(WEIGHTS_PATH):
+        try:
+            model = SentenceTransformer(WEIGHTS_PATH, device=device)
+            return model
+        except Exception:
+            pass
+
     model = SentenceTransformer(model_name, device=device)
     return model
+
