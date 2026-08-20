@@ -481,7 +481,7 @@ export const mockProducts: Product[] = [
     price: 1890,
     currency: 'INR',
     images: [
-      'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&auto=format&fit=crop&q=80',
+      '/products/fabindia-kurta.jpg/20278945-01.avif',
     ],
     attributes: {
       fabric: '100% Handwoven Cotton Khadi',
@@ -675,7 +675,7 @@ export const mockProducts: Product[] = [
     price: 2450,
     currency: 'INR',
     images: [
-      'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=500&auto=format&fit=crop&q=80',
+      '/products/prestige-cooker.jpg/bandgurami-pressure-cooker-stainless-steel__1285352_pe933295_s5.avif',
     ],
     attributes: {
       capacity: '3.5 Litres',
@@ -761,7 +761,7 @@ export const mockProducts: Product[] = [
     price: 525,
     currency: 'INR',
     images: [
-      'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=500&auto=format&fit=crop&q=80',
+      '/products/sleepy-owl.jpg/1_12_900x.webp',
     ],
     attributes: {
       roast_level: 'Dark Roast',

@@ -1,58 +1,57 @@
 import { useState } from 'react';
+
 import { IngestionPage } from '@/pages/Ingestion/IngestionPage';
 import { ProductsPage } from '@/pages/Products/ProductsPage';
+import { ProductDetailPage } from '@/pages/Products/ProductDetailPage';
 import { QualityPage } from '@/pages/Quality/QualityPage';
+import { IntelligencePage } from '@/pages/Intelligence/IntelligencePage';
 import { MainLayout } from '@/layouts/MainLayout';
 import { NavigationSection } from '@/layouts/Sidebar';
-import { PageHeader } from '@/components/common/PageHeader';
-import { EmptyState } from '@/components/common/EmptyState';
-import { Button } from '@/components/ui/button';
 import { DashboardPage } from '@/pages/DashboardPage';
-import { Layers } from 'lucide-react';
-
 export default function App() {
-  const [activeSection, setActiveSection] = useState<NavigationSection>('overview');
+  const [activeSection, setActiveSection] =
+    useState<NavigationSection>('overview');
+
+  const [selectedProductId, setSelectedProductId] =
+    useState<string | null>(null);
+
+  const handleSectionChange = (section: NavigationSection) => {
+    setActiveSection(section);
+    setSelectedProductId(null);
+  };
 
   return (
-    <MainLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+    <MainLayout
+      activeSection={activeSection}
+      onSectionChange={handleSectionChange}
+    >
       {activeSection === 'overview' && (
-        <DashboardPage onNavigate={setActiveSection} />
+        <DashboardPage onNavigate={handleSectionChange} />
       )}
-{activeSection === 'ingestion' && (
-  <IngestionPage onBack={() => setActiveSection('overview')} />
-)}
 
-{/* Placeholder sections for Products, Quality, Intelligence */}
-      {activeSection === 'products' && <ProductsPage />}
+      {activeSection === 'ingestion' && (
+        <IngestionPage
+          onBack={() => handleSectionChange('overview')}
+        />
+      )}
+
+      {activeSection === 'products' && selectedProductId && (
+        <ProductDetailPage
+          productId={selectedProductId}
+          onBack={() => setSelectedProductId(null)}
+        />
+      )}
+
+      {activeSection === 'products' && !selectedProductId && (
+        <ProductsPage
+          onProductSelect={setSelectedProductId}
+        />
+      )}
+
       {activeSection === 'quality' && <QualityPage />}
+      {activeSection === 'intelligence' && <IntelligencePage />}
 
-{activeSection !== 'overview' && activeSection !== 'ingestion' && activeSection !== 'products' && activeSection !== 'quality' && (
-        <div className="space-y-6">
-          <PageHeader
-            title={activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
-            description={`ANVAYA ${activeSection} module placeholder ready for Phase 5+ implementation.`}
-            actions={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveSection('overview')}
-              >
-                Back to Dashboard
-              </Button>
-            }
-          />
-          <EmptyState
-            icon={Layers}
-            title={`${activeSection.charAt(0).toUpperCase() + activeSection.slice(1)} Module`}
-            description={`The foundation for the ${activeSection} module has been prepared with full typed services and mock fallback. This view will be fully activated in subsequent phases.`}
-            action={
-              <Button onClick={() => setActiveSection('overview')} variant="secondary">
-                Return to Dashboard
-              </Button>
-            }
-          />
-        </div>
-      )}
+      
     </MainLayout>
   );
 }
