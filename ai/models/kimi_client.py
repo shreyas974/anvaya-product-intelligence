@@ -1,26 +1,24 @@
 """
-kimi_client.py -- Kimi (Moonshot AI) LLM Client Integration for Anvaya
+kimi_client.py -- Kimi (Moonshot AI) & Free LLM Client Integration for Anvaya
 
-WHAT: Provides an OpenAI-compatible interface to invoke Kimi / Moonshot AI LLMs
-      (e.g. moonshot-v1-8k, moonshot-v1-32k, kimi-latest) for generative product
+WHAT: Provides an OpenAI-compatible interface to invoke LLMs for generative product
       enrichment, rich marketing descriptions, and bullet-point feature extraction.
+      Fully compatible with Moonshot AI / Kimi and all 100% Free Providers (Gemini, Groq, OpenRouter, Ollama).
 
 WHY:  Complex e-commerce content (MARKETING_DESCRIPTION, 20 ITEM_FEATURES, application notes)
       benefits from advanced generative intelligence while adhering strictly to extracted specs.
 
-HOW:  Uses the OpenAI client with Moonshot AI's endpoint (https://api.moonshot.cn/v1).
-      Gracefully falls back to local templated generation if no API key is provided.
+HOW:  Extends and wraps FreeLLMEngine for transparent backward compatibility.
 """
 
-import os
-import json
+from typing import Mapping, Any, Optional
 from dataclasses import dataclass
-from typing import Mapping, Any
+from ai.models.free_llm_engine import FreeLLMEngine, FreeLLMProvider, EnrichmentLLMResponse
 
 
 @dataclass
 class KimiEnrichmentResponse:
-    """Structured response from Kimi LLM enrichment."""
+    """Structured response from LLM enrichment (backward-compatible dataclass)."""
     marketing_description: str
     item_features: list[str]
     short_desc: str
@@ -32,108 +30,57 @@ class KimiEnrichmentResponse:
 
 class KimiClient:
     """
-    Client for interacting with Kimi (Moonshot AI) LLMs.
+    Client for interacting with Kimi (Moonshot AI) and free LLMs.
+    Maintains 100% backward compatibility with previous interface.
     """
 
     def __init__(
         self,
-        api_key: str | None = None,
-        base_url: str = "https://api.moonshot.cn/v1",
-        default_model: str = "moonshot-v1-8k",
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        default_model: Optional[str] = None,
+        provider: str = "kimi",
     ):
-        self.api_key = api_key or os.getenv("MOONSHOT_API_KEY") or os.getenv("KIMI_API_KEY")
-        self.base_url = base_url
-        self.default_model = default_model
-        self._client = None
-
-        if self.api_key:
-            from openai import OpenAI
-            self._client = OpenAI(
-                api_key=self.api_key,
-                base_url=self.base_url,
-            )
+        self.engine = FreeLLMEngine(
+            provider=provider,
+            api_key=api_key,
+            base_url=base_url,
+            model=default_model,
+        )
+        self.default_model = default_model or "moonshot-v1-8k"
 
     @property
     def is_available(self) -> bool:
-        """Return True if an API key is configured."""
-        return self._client is not None
+        """Return True if an API key/provider is configured."""
+        return self.engine.is_available()
 
     def enrich_product_content(
         self,
         mfg_part_num: str,
         part_desc: str,
-        brand_name: str | None = None,
-        mfg_name: str | None = None,
-        category: str | None = None,
-        extracted_specs: Mapping[str, Any] | None = None,
+        brand_name: Optional[str] = None,
+        mfg_name: Optional[str] = None,
+        category: Optional[str] = None,
+        extracted_specs: Optional[Mapping[str, Any]] = None,
     ) -> KimiEnrichmentResponse:
         """
-        Generate rich marketing copy, bullet features, and application notes using Kimi.
+        Generate rich marketing copy, bullet features, and application notes.
         """
-        if not self.is_available:
-            # Offline / local fallback
-            prod = part_desc or mfg_part_num
-            brand = brand_name or ""
-            return KimiEnrichmentResponse(
-                marketing_description=(
-                    f"The {brand} {mfg_part_num} {prod} delivers superior performance and durability "
-                    "engineered for industrial, commercial, and residential applications."
-                ),
-                item_features=[
-                    f"Engineered for heavy-duty commercial and residential performance",
-                    f"Precision crafted by {brand or mfg_name or 'the manufacturer'}",
-                    f"Standard manufacturer warranty and compliance approved",
-                ],
-                short_desc=f"{brand} {mfg_part_num} {prod}".strip(),
-                application="Industrial, commercial, and residential use.",
-                success=True,
-                model_used="local_fallback",
-            )
-
-        # Build prompt for Kimi
-        prompt = (
-            f"You are an industrial e-commerce catalog copywriter for Anvaya.\n"
-            f"Product Part Number: {mfg_part_num}\n"
-            f"Description: {part_desc}\n"
-            f"Brand: {brand_name or 'N/A'}\n"
-            f"Manufacturer: {mfg_name or 'N/A'}\n"
-            f"Category: {category or 'N/A'}\n"
-            f"Extracted Specifications: {json.dumps(extracted_specs or {})}\n\n"
-            f"Return a strict JSON object with these keys:\n"
-            f'{{"marketing_description": "...", "item_features": ["feat1", "feat2", "feat3"], "short_desc": "...", "application": "..."}}\n'
-            f"Do not hallucinate specifications not supported by the product details."
+        res: EnrichmentLLMResponse = self.engine.enrich_product_content(
+            mfg_part_num=mfg_part_num,
+            part_desc=part_desc,
+            brand_name=brand_name,
+            mfg_name=mfg_name,
+            category=category,
+            extracted_specs=extracted_specs,
         )
 
-        try:
-            response = self._client.chat.completions.create(
-                model=self.default_model,
-                messages=[
-                    {"role": "system", "content": "You are a professional B2B product data enrichment engine."},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.3,
-                response_format={"type": "json_object"},
-            )
-            content = response.choices[0].message.content or "{}"
-            data = json.loads(content)
-
-            return KimiEnrichmentResponse(
-                marketing_description=data.get("marketing_description", ""),
-                item_features=data.get("item_features", []),
-                short_desc=data.get("short_desc", ""),
-                application=data.get("application", ""),
-                success=True,
-                raw_response=content,
-                model_used=self.default_model,
-            )
-        except Exception as e:
-            # Graceful fallback on API failure
-            return KimiEnrichmentResponse(
-                marketing_description=f"Standard performance product {part_desc}",
-                item_features=["Industrial grade reliability", "Meets standard approvals"],
-                short_desc=f"{brand_name or ''} {mfg_part_num} {part_desc}".strip(),
-                application="Commercial application",
-                success=False,
-                raw_response=str(e),
-                model_used="error_fallback",
-            )
+        return KimiEnrichmentResponse(
+            marketing_description=res.marketing_description,
+            item_features=res.item_features,
+            short_desc=res.short_desc,
+            application=res.application,
+            success=res.success,
+            raw_response=res.raw_response,
+            model_used=res.model_used,
+        )

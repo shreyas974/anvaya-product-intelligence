@@ -28,6 +28,7 @@ import numpy as np
 from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any, Mapping, Optional, List, Dict
 
 from ai.enrichment.schema import (
     PASSTHROUGH_COLUMNS, OUTPUT_COLUMN_ORDER, BRAND_PLACEHOLDERS,
@@ -116,12 +117,29 @@ class EnrichmentPipeline:
       8. ASSEMBLE:  Combine all results into the 252-column output schema
     """
 
-    def __init__(self, use_kimi: bool = False, kimi_api_key: str | None = None):
+    def __init__(
+        self,
+        use_llm: bool = False,
+        provider: str = "auto",
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
+        use_kimi: bool = False,  # Backward compatibility
+        kimi_api_key: str | None = None,  # Backward compatibility
+    ):
         self.cleaner = ProductCleaner()
         self.mfg_matcher = ManufacturerMatcher()
         self.brand_matcher = BrandMatcher()
         self.classifier = CategoryClassifier()
-        self.desc_generator = DescriptionGenerator(use_kimi=use_kimi, kimi_api_key=kimi_api_key)
+        self.desc_generator = DescriptionGenerator(
+            use_llm=use_llm,
+            provider=provider,
+            api_key=api_key,
+            base_url=base_url,
+            model=model,
+            use_kimi=use_kimi,
+            kimi_api_key=kimi_api_key,
+        )
         self.attr_extractor = AttributeExtractor()
         self.confidence_scorer = ConfidenceScorer()
 
@@ -188,13 +206,13 @@ class EnrichmentPipeline:
             if r.status == "HUMAN_REVIEW_REQUIRED":
                 review_flags[i] = True
 
-        # ----- Stage 5: GENERATE DESCRIPTIONS (Kimi / Generative AI) -----
+        # ----- Stage 5: GENERATE DESCRIPTIONS (Free LLM / Local AI) -----
         short_descs = []
         long_descs = []
         retail_descs = []
         mobile_descs = []
         marketing_descs = []
-        feature_dict = {f"ITEM_FEATURES_{i}": [None] * input_rows for i in range(1, 21)}
+        feature_dict: dict[str, list[Any]] = {f"ITEM_FEATURES_{i}": [None] * input_rows for i in range(1, 21)}
 
         for row_idx, (_, row) in enumerate(extracted.iterrows()):
             gen = self.desc_generator.generate(
@@ -224,7 +242,7 @@ class EnrichmentPipeline:
 
         # ----- Stage 6: STRUCTURED ATTRIBUTE TRIPLETS -----
         # Pre-allocate dictionary of lists for all 50 triplets
-        attr_dict = {}
+        attr_dict: dict[str, list[Any]] = {}
         for i in range(1, 51):
             attr_dict[f"ATTRIBUTE_LABEL {i}"] = [None] * input_rows
             attr_dict[f"ATTRIBUTE_VALUE {i}"] = [None] * input_rows
@@ -248,7 +266,7 @@ class EnrichmentPipeline:
         # ----- Stage 7: QUALITY ASSESSMENT -----
         quality_scores = []
         for _, row in extracted.iterrows():
-            assessment = self.confidence_scorer.evaluate_record(row)
+            assessment = self.confidence_scorer.evaluate_record(row.to_dict())
             quality_scores.append(assessment.overall_confidence)
 
         extracted["_quality_confidence"] = quality_scores
