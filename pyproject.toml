@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anvaya-product-intelligence"
+version = "0.1.0"
+description = "AI Product Intelligence and Content Enrichment Platform"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "torch",
+    "transformers",
+    "sentence-transformers",
+    "pandas",
+    "numpy",
+    "fastapi",
+    "uvicorn",
+    "openai",
+    "pytest",
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+extraPaths = [
+    ".",
+    ".venv/Lib/site-packages"
+]
+pythonVersion = "3.12"
+pythonPlatform = "Windows"
+
+[tool.pyrefly]
+venv = ".venv"
+python = ".venv/Scripts/python.exe"
+extra-paths = [
+    ".",
+    ".venv/Lib/site-packages"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
