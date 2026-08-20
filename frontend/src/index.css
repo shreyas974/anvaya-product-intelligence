@@ -16,8 +16,8 @@
     --popover-foreground: 60 8% 94%;
 
     /* Intelligence signal */
-    --primary: 72 100% 62%;
-    --primary-foreground: 60 9% 4%;
+    --primary: 188 86% 53%;
+    --primary-foreground: 222 47% 6%;
 
     --secondary: 60 5% 12%;
     --secondary-foreground: 60 8% 91%;
@@ -25,15 +25,15 @@
     --muted: 60 5% 11%;
     --muted-foreground: 60 4% 56%;
 
-    --accent: 72 100% 62%;
-    --accent-foreground: 60 9% 4%;
+    --accent: 258 90% 66%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 4 84% 63%;
     --destructive-foreground: 60 8% 96%;
 
     --border: 60 5% 17%;
     --input: 60 5% 17%;
-    --ring: 72 100% 62%;
+    --ring: 188 86% 53%;
 
     --radius: 0.35rem;
   }
