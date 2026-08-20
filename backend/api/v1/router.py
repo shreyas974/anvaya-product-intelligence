@@ -15,6 +15,7 @@ from backend.controllers.product_controller import (
     remove_product,
 )
 from backend.db.database import get_db
+from backend.schemas.document import DocumentProcessResponse
 from backend.schemas.file import FileUploadResponse
 from backend.schemas.product import (
     ProductCreate,
@@ -46,11 +47,14 @@ async def upload_file(
     return await save_uploaded_file(file)
 
 
-@api_router.post("/documents/process")
+@api_router.post(
+    "/documents/process",
+    response_model=DocumentProcessResponse,
+)
 async def process_document_endpoint(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
-) -> dict:
+) -> DocumentProcessResponse:
     uploaded = await save_uploaded_file(file)
 
     file_path = Path("data/uploads") / uploaded["stored_filename"]
