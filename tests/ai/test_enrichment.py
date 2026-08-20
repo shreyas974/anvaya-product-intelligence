@@ -416,3 +416,80 @@ class TestAIComponents:
         assert output.enriched_data.iloc[0]["Fine"] == "Dishwashers"
         assert pd.isna(output.enriched_data.iloc[0]["E1_Brand"])  # cleaned!
 
+
+# =========================================================================
+# Quality & Attribute Extraction tests
+# =========================================================================
+class TestQualityAndAttributes:
+    """Tests for UOMNormalizer, LOVValidator, AttributeExtractor, and ConfidenceScorer."""
+
+    def test_uom_normalizer_canonical(self):
+        """UOMNormalizer should convert common unit strings to approved canonical forms."""
+        from ai.quality.uom_normalizer import UOMNormalizer
+
+        norm = UOMNormalizer()
+        assert norm.normalize('"').normalized_uom == "in"
+        assert norm.normalize("inches").normalized_uom == "in"
+        assert norm.normalize("volts").normalized_uom == "V"
+        assert norm.normalize("amps").normalized_uom == "A"
+        assert norm.normalize("dba").normalized_uom == "dBA"
+
+    def test_lov_validator(self):
+        """LOVValidator should validate exact, case-insensitive, and substring matches."""
+        from ai.quality.lov_validator import LOVValidator
+
+        validator = LOVValidator()
+        res_exact = validator.validate("Material", "Stainless Steel")
+        assert res_exact.is_valid is True
+        assert res_exact.validated_value == "Stainless Steel"
+
+        res_case = validator.validate("Mounting Type", "built-in")
+        assert res_case.is_valid is True
+        assert res_case.validated_value == "Built-in"
+
+        res_bad = validator.validate("Material", "Alien Vibranium")
+        assert res_bad.is_valid is False
+
+    def test_attribute_extractor(self):
+        """AttributeExtractor should extract Voltage, Amperage, Sound, Material triplets."""
+        from ai.extraction.attribute_extractor import AttributeExtractor
+
+        extractor = AttributeExtractor()
+        text = "WDTS7024RZ Dishwasher 120V 10A 41 dBA Stainless Steel Built-in"
+        triplets = extractor.extract_triplets(text)
+
+        labels = [t.label for t in triplets]
+        assert "Voltage Rating" in labels
+        assert "Amperage Rating" in labels
+        assert "Sound Level" in labels
+        assert "Material" in labels
+        assert "Mounting Type" in labels
+
+    def test_confidence_scorer(self):
+        """ConfidenceScorer should accurately assess record quality."""
+        from ai.quality.confidence_scorer import ConfidenceScorer
+
+        scorer = ConfidenceScorer()
+        good_record = {
+            "BRAND_NAME": "Whirlpool",
+            "Dept": "Appliances",
+            "Fine": "Dishwashers",
+            "Product Name": "Dishwasher",
+            "MANUFACTURER_NAME": "Whirlpool Corporation",
+        }
+        res_good = scorer.evaluate_record(good_record)
+        assert res_good.status == "AUTO_APPROVED"
+        assert res_good.overall_confidence >= 0.75
+
+        bad_record = {
+            "BRAND_NAME": None,
+            "Dept": None,
+            "Fine": None,
+            "Product Name": None,
+            "MANUFACTURER_NAME": None,
+        }
+        res_bad = scorer.evaluate_record(bad_record)
+        assert res_bad.status == "HUMAN_REVIEW_REQUIRED"
+        assert res_bad.overall_confidence == 0.0
+
+

@@ -40,6 +40,8 @@ from ai.enrichment.extractor import (
 from ai.enrichment.matcher import ManufacturerMatcher, BrandMatcher
 from ai.classification.classifier import CategoryClassifier
 from ai.enrichment.description_generator import DescriptionGenerator
+from ai.extraction.attribute_extractor import AttributeExtractor
+from ai.quality.confidence_scorer import ConfidenceScorer
 
 
 # -------------------------------------------------------------------------
@@ -67,11 +69,13 @@ class EnrichmentOutput:
             "  Cleaning:",
             f"    {self.cleaning_result.summary()}",
             "",
-            "  Extraction:",
+            "  Extraction & Quality:",
             f"    Product Name resolved:  {self.stats.get('product_name_filled', 0)}"
             f" / {self.stats.get('input_rows', 0)}",
             f"    Dimensions extracted:   {self.stats.get('dims_filled', 0)}"
             f" / {self.stats.get('input_rows', 0)}",
+            f"    Attributes extracted:   {self.stats.get('attributes_extracted', 0)}"
+            f" across all items",
             "",
             "  Matching:",
             f"    Manufacturer resolved:  {self.stats.get('mfg_resolved', 0)}"
@@ -102,12 +106,14 @@ class EnrichmentPipeline:
     Orchestrates the full hybrid AI + deterministic enrichment pipeline.
 
     Stages:
-      1. CLEAN:    ProductCleaner removes placeholders, trims whitespace
-      2. EXTRACT:  Deterministic parsing of Part_Desc and Part_Manuf
-      3. MATCH:    Manufacturer and brand resolution
-      4. CLASSIFY: Semantic embedding taxonomy classifier (Dept, Class, Fine, Classpath)
-      5. GENERATE: Standardized commercial & technical descriptions
-      6. ASSEMBLE: Combine all results into the 252-column output schema
+      1. CLEAN:     ProductCleaner removes placeholders, trims whitespace
+      2. EXTRACT:   Deterministic parsing of Part_Desc and Part_Manuf
+      3. MATCH:     Manufacturer and brand resolution
+      4. CLASSIFY:  Semantic embedding taxonomy classifier (Dept, Class, Fine, Classpath)
+      5. GENERATE:  Standardized commercial & technical descriptions
+      6. ATTRIBUTES: Extract, validate, and normalize structured attribute triplets
+      7. QUALITY:   Calculate quality confidence score and governance status
+      8. ASSEMBLE:  Combine all results into the 252-column output schema
     """
 
     def __init__(self):
@@ -116,6 +122,8 @@ class EnrichmentPipeline:
         self.brand_matcher = BrandMatcher()
         self.classifier = CategoryClassifier()
         self.desc_generator = DescriptionGenerator()
+        self.attr_extractor = AttributeExtractor()
+        self.confidence_scorer = ConfidenceScorer()
 
     def run(self, df: pd.DataFrame) -> EnrichmentOutput:
         """
@@ -204,9 +212,40 @@ class EnrichmentPipeline:
         extracted["LONG_DESC1"] = long_descs
         extracted["RETAIL_DESC"] = retail_descs
         extracted["MOBILE_DESC"] = mobile_descs
+
+        # ----- Stage 6: STRUCTURED ATTRIBUTE TRIPLETS -----
+        # Pre-allocate dictionary of lists for all 50 triplets
+        attr_dict = {}
+        for i in range(1, 51):
+            attr_dict[f"ATTRIBUTE_LABEL {i}"] = [None] * input_rows
+            attr_dict[f"ATTRIBUTE_VALUE {i}"] = [None] * input_rows
+            attr_dict[f"ATTRIBUTE_UOM {i}"] = [None] * input_rows
+
+        total_extracted_attributes = 0
+        for row_idx, (_, row) in enumerate(extracted.iterrows()):
+            triplets = self.attr_extractor.extract_triplets(
+                part_desc=str(row["Part_Desc"]),
+                extra_text=str(row.get("LONG_DESC1", "")),
+            )
+            total_extracted_attributes += len(triplets)
+            for t_idx, triplet in enumerate(triplets[:50], start=1):
+                attr_dict[f"ATTRIBUTE_LABEL {t_idx}"][row_idx] = triplet.label
+                attr_dict[f"ATTRIBUTE_VALUE {t_idx}"][row_idx] = triplet.value
+                attr_dict[f"ATTRIBUTE_UOM {t_idx}"][row_idx] = triplet.uom if triplet.uom else None
+
+        attr_df = pd.DataFrame(attr_dict, index=extracted.index)
+        extracted = pd.concat([extracted, attr_df], axis=1)
+
+        # ----- Stage 7: QUALITY ASSESSMENT -----
+        quality_scores = []
+        for _, row in extracted.iterrows():
+            assessment = self.confidence_scorer.evaluate_record(row)
+            quality_scores.append(assessment.overall_confidence)
+
+        extracted["_quality_confidence"] = quality_scores
         extracted["_needs_review"] = review_flags
 
-        # ----- Stage 6: ASSEMBLE into output schema -----
+        # ----- Stage 8: ASSEMBLE into output schema -----
         enriched = self._assemble_output(extracted)
 
         # ----- Statistics -----
@@ -216,6 +255,7 @@ class EnrichmentPipeline:
             "output_cols": len(enriched.columns),
             "product_name_filled": enriched["Product Name"].notna().sum(),
             "dims_filled": extracted["_extracted_dimensions"].notna().sum(),
+            "attributes_extracted": total_extracted_attributes,
             "mfg_resolved": sum(1 for v in mfg_names if v is not None),
             "brand_resolved": sum(1 for v in brand_names if v is not None),
             "classified_rows": sum(1 for r in cls_results if r.dept != ""),
@@ -253,40 +293,11 @@ class EnrichmentPipeline:
         Map extracted/matched/generated columns into the full 252-column output schema.
         Columns that can't be populated yet are left as NaN.
         """
-        # Map known columns from extracted DataFrame
-        column_mapping = {
-            # Passthrough
-            "Mfg_Part_Num": "Mfg_Part_Num",
-            "Part_Desc": "Part_Desc",
-            # Cleaned
-            "E1_Brand": "E1_Brand",
-            "Unilog_Brand": "Unilog_Brand",
-            "DIB_Brand": "DIB_Brand",
-            "Part_Manuf": "Part_Manuf",
-            # Extracted
-            "MANUFACTURER_PART_NUMBER": "MANUFACTURER_PART_NUMBER",
-            "Product Name": "Product Name",
-            "INVOICE_DESC": "INVOICE_DESC",
-            # Matched
-            "MANUFACTURER_NAME": "MANUFACTURER_NAME",
-            "BRAND_NAME": "BRAND_NAME",
-            # Classified
-            "Dept": "Dept",
-            "Class": "Class",
-            "Fine": "Fine",
-            "Classpath": "Classpath",
-            # Generated Descriptions
-            "SHORT_DESC": "SHORT_DESC",
-            "LONG_DESC1": "LONG_DESC1",
-            "RETAIL_DESC": "RETAIL_DESC",
-            "MOBILE_DESC": "MOBILE_DESC",
-        }
-
-        # Build all columns at once in a dict
+        # Build all columns at once in a dict for efficiency
         all_columns = {}
         for col in OUTPUT_COLUMN_ORDER:
-            if col in column_mapping and column_mapping[col] in extracted.columns:
-                all_columns[col] = extracted[column_mapping[col]].values
+            if col in extracted.columns:
+                all_columns[col] = extracted[col].values
             else:
                 all_columns[col] = np.nan
 
