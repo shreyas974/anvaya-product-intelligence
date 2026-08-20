@@ -361,7 +361,7 @@ export const mockProducts: Product[] = [
           source: 'attribute_normalizer',
           evidenceSnippet: 'Normalized inconsistent weight notation',
           extractionMethod: 'schema_normalization',
-          confidence: 0.97,
+         confidence: 0.97,
           validationStatus: 'validated',
         },
       },
@@ -379,7 +379,7 @@ export const mockProducts: Product[] = [
     enrichmentStatus: 'enriched',
     confidenceScore: 0.92,
     status: 'cleaned',
-    timestamps: {
+     timestamps: {
       createdAt: '2026-08-15T11:00:00Z',
       updatedAt: '2026-08-18T09:15:00Z',
       lastEnrichedAt: '2026-08-18T09:15:00Z',
@@ -396,14 +396,21 @@ export const mockProducts: Product[] = [
     price: 399,
     currency: 'INR',
     images: [
-      'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80',
+      '/products/dabur-chyawanprash.jpg/Dabur-Chyawanprash-Jar-2X-Immunity-1592198111-10073062-1.jpg',
     ],
     attributes: {
       weight: '1 kg',
       item_form: 'Paste',
-      key_ingredients: ['Amla', 'Ashwagandha', 'Giloy', 'Pippali', 'Shatavari'],
+      key_ingredients: [
+        'Amla',
+        'Ashwagandha',
+        'Giloy',
+        'Pippali',
+        'Shatavari',
+      ],
       age_range: 'All Age Groups (Kids & Adults)',
       vegetarian: true,
+
     },
     rawData: {
       rawTitle: 'Dabur India Pvt Ltd Chyawanprash 1kg Jar Immunity Booster',
