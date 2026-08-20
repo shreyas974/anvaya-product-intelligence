@@ -61,7 +61,7 @@ class LOVValidator:
         """
         Validate an attribute value against the LOV for its attribute label.
         """
-        if not attribute_value or str(attribute_value).strip() == "" or str(attribute_value).lower() == "nan":
+        if not attribute_value or attribute_value.strip() == "" or attribute_value.lower() == "nan":
             return LOVValidationResult(
                 original_value="",
                 validated_value="",
@@ -70,8 +70,8 @@ class LOVValidator:
                 rule="empty_value",
             )
 
-        val = str(attribute_value).strip()
-        label = str(attribute_label).strip()
+        val = attribute_value.strip()
+        label = attribute_label.strip()
 
         # If no LOV exists for this label, accept with general confidence
         if label not in self.lov_tables:

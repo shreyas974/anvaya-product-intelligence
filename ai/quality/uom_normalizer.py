@@ -90,7 +90,7 @@ class UOMNormalizer:
         """
         Normalize a raw UOM string to its approved canonical form.
         """
-        if not raw_uom or str(raw_uom).strip() == "" or str(raw_uom).lower() == "nan":
+        if not raw_uom or raw_uom.strip() == "" or raw_uom.lower() == "nan":
             return UOMNormalizationResult(
                 original_uom="",
                 normalized_uom="",
@@ -98,7 +98,7 @@ class UOMNormalizer:
                 is_standard=True,
             )
 
-        clean = str(raw_uom).strip()
+        clean = raw_uom.strip()
         lower = clean.lower()
 
         if lower in STANDARD_UOM_MAP:
