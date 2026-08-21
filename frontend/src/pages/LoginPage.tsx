@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { supabase } from '@/supabase';
 import {
     ArrowRight,
     Eye,
@@ -18,10 +19,22 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        onLogin();
-    };
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+    });
+
+    if (error) {
+        console.error('Login failed:', error.message);
+        alert(error.message);
+        return;
+    }
+
+    onLogin();
+};
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-background text-foreground">

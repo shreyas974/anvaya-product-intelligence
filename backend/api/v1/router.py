@@ -2,7 +2,7 @@ from pathlib import Path
 from backend.services.pipeline_service import run_document_pipeline
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
-
+from backend.services.quality_service import calculate_quality_metrics
 from backend.auth.dependencies import get_current_user, require_roles
 from backend.auth.roles import UserRole
 from backend.controllers.document_controller import process_uploaded_document
@@ -135,7 +135,18 @@ async def generate_ai(
         response=result,
     )
 
+# ---------------- Quality ----------------
 
+@api_router.get(
+    "/quality/metrics",
+)
+def get_quality_metrics(
+    db: Session = Depends(get_db),
+):
+    return {
+        "success": True,
+        "data": calculate_quality_metrics(db),
+    }
 # ---------------- Products ----------------
 
 @api_router.get(
@@ -205,3 +216,130 @@ def delete_existing_product(
     ),
 ) -> None:
     remove_product(db, product_id)
+    # ---------------- Enrichment ----------------
+
+@api_router.get("/enrichment/status/{job_id}")
+def get_enrichment_status(job_id: str):
+    """
+    Return the current status of an enrichment job.
+    Temporary backend implementation until the real enrichment
+    pipeline/job service is connected.
+    """
+    return {
+        "success": True,
+        "data": {
+            "jobId": job_id,
+            "status": "in_progress",
+            "progress": 50,
+            "totalProducts": 4,
+            "processedProducts": 2,
+            "estimatedTimeRemainingSeconds": 6,
+            "resultsSummary": {
+                "enrichedCount": 2,
+                "flaggedCount": 0,
+                "errorCount": 0,
+            },
+        },
+    }
+
+
+# ---------------- Intelligence ----------------
+
+@api_router.get("/intelligence/category-insights")
+def get_category_insights(categorySlug: str | None = None):
+    """
+    Return category-level intelligence insights matching the
+    frontend CategoryInsight API contract.
+    """
+    insights = [
+        {
+            "category": "General",
+            "categorySlug": "general",
+            "productCount": 0,
+            "averageQualityScore": 100.0,
+            "averagePrice": 0.0,
+            "currency": "INR",
+            "topBrands": [],
+            "completenessRate": 100.0,
+            "commonMissingAttributes": [],
+            "priceRange": {
+                "min": 0.0,
+                "max": 0.0,
+                "median": 0.0,
+                "average": 0.0,
+            },
+            "keyAttributeCoverage": {},
+        }
+    ]
+
+    if categorySlug:
+        insights = [
+            item
+            for item in insights
+            if item["categorySlug"].lower() == categorySlug.lower()
+        ]
+
+    return {
+        "success": True,
+        "data": insights,
+    }
+
+
+@api_router.get("/intelligence/duplicates")
+def get_duplicates(
+    minSimilarity: float | None = None,
+    clusterId: str | None = None,
+):
+    """
+    Return semantic duplicate clusters.
+    Temporary implementation until the semantic duplicate
+    detection service is connected.
+    """
+    clusters = []
+
+    if clusterId:
+        clusters = [
+            cluster
+            for cluster in clusters
+            if cluster["clusterId"] == clusterId
+        ]
+
+    if minSimilarity is not None:
+        normalized_similarity = (
+            minSimilarity / 100
+            if minSimilarity > 1
+            else minSimilarity
+        )
+
+        clusters = [
+            cluster
+            for cluster in clusters
+            if cluster["similarityScore"] >= normalized_similarity
+        ]
+
+    return {
+        "success": True,
+        "data": clusters,
+        }
+
+
+@api_router.get("/intelligence/taxonomy")
+def get_taxonomy():
+
+    """
+
+    Return the canonical product taxonomy tree.
+
+    Temporary backend implementation until the taxonomy
+
+    service is connected.
+
+    """
+
+    return {
+
+        "success": True,
+
+        "data": [],
+
+    }

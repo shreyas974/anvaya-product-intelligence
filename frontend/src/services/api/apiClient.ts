@@ -1,5 +1,6 @@
 import { HttpError } from '@/types/api.types';
 import { apiConfig } from './apiConfig';
+import { supabase } from '@/supabase';
 
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, string | number | boolean | undefined | null>;
@@ -50,10 +51,18 @@ export async function request<T>(
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  const headers: Record<string, string> = {
-    'Accept': 'application/json',
-    ...(customHeaders as Record<string, string>),
-  };
+  const {
+  data: { session },
+} = await supabase.auth.getSession();
+
+const headers: Record<string, string> = {
+  'Accept': 'application/json',
+  ...(customHeaders as Record<string, string>),
+};
+
+if (session?.access_token) {
+  headers['Authorization'] = `Bearer ${session.access_token}`;
+}
 
   let serializedBody: BodyInit | undefined;
   if (body !== undefined) {

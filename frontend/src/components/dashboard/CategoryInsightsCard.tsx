@@ -261,7 +261,7 @@ export function CategoryInsightsCard({
                 </p>
 
                 <p className="mt-1.5 text-xl font-black tracking-tight text-foreground">
-                  ₹{activeCategory.priceRange.median.toLocaleString()}
+                  ₹{(activeCategory.priceRange?.median ?? activeCategory.averagePrice ?? 0).toLocaleString()}
                 </p>
 
                 <p className="mt-0.5 text-[10px] font-medium text-muted-foreground">
