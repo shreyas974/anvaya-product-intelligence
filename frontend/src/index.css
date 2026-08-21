@@ -4,38 +4,39 @@
 
 @layer base {
   :root {
-    /* ANVAYA — Intelligence Lab */
+    /* ANVAYA — Premium AI Intelligence */
 
-    --background: 60 9% 4%;
-    --foreground: 60 8% 94%;
+    --background: 230 25% 5%;
+    --foreground: 220 20% 96%;
 
-    --card: 60 7% 7%;
-    --card-foreground: 60 8% 94%;
+    --card: 230 22% 8%;
+    --card-foreground: 220 20% 96%;
 
-    --popover: 60 7% 6%;
-    --popover-foreground: 60 8% 94%;
+    --popover: 230 22% 7%;
+    --popover-foreground: 220 20% 96%;
 
-    /* Intelligence signal */
-    --primary: 188 86% 53%;
-    --primary-foreground: 222 47% 6%;
+    /* Electric violet */
+    --primary: 258 90% 66%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 60 5% 12%;
-    --secondary-foreground: 60 8% 91%;
+    --secondary: 225 20% 13%;
+    --secondary-foreground: 220 20% 93%;
 
-    --muted: 60 5% 11%;
-    --muted-foreground: 60 4% 56%;
+    --muted: 225 18% 12%;
+    --muted-foreground: 220 10% 58%;
 
-    --accent: 258 90% 66%;
-    --accent-foreground: 210 40% 98%;
+    /* Cyan AI accent */
+    --accent: 190 90% 55%;
+    --accent-foreground: 230 25% 5%;
 
-    --destructive: 4 84% 63%;
-    --destructive-foreground: 60 8% 96%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 60 5% 17%;
-    --input: 60 5% 17%;
-    --ring: 188 86% 53%;
+    --border: 225 18% 18%;
+    --input: 225 18% 18%;
+    --ring: 258 90% 66%;
 
-    --radius: 0.35rem;
+    --radius: 0.55rem;
   }
 
   html {
@@ -131,8 +132,8 @@
 
   .anvaya-glow {
     box-shadow:
-      0 0 0 1px rgba(211, 255, 77, 0.08),
-      0 0 40px rgba(211, 255, 77, 0.04);
+      0 0 0 1px rgba(139, 92, 246, 0.08),
+      0 0 40px rgba(139, 92, 246, 0.04);
   }
 
   .anvaya-hover {
@@ -145,7 +146,7 @@
 
   .anvaya-hover:hover {
     transform: translateY(-1px);
-    border-color: rgba(211, 255, 77, 0.28);
+    border-color: rgba(139, 92, 246, 0.28);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
   }
 }
@@ -156,6 +157,6 @@
   }
 
   .text-glow {
-    text-shadow: 0 0 24px rgba(211, 255, 77, 0.22);
+    text-shadow: 0 0 24px rgba(139, 92, 246, 0.22);
   }
 }
