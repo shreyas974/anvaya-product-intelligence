@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Package, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
+import {
+  Package,
+  RefreshCw,
+  Search,
+  SlidersHorizontal,
+  ArrowUpRight,
+  Sparkles,
+  Tag,
+} from 'lucide-react';
 
 import { productsService } from '@/services/products.service';
 import type { Product, ProductStatus } from '@/types/product.types';
@@ -401,90 +409,179 @@ export function ProductsPage({
               }
             />
           ) : (
-            <div className="overflow-hidden rounded-lg border border-border bg-card">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-border bg-muted/40">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold">
-                        Product
-                      </th>
-                      <th className="px-4 py-3 text-left font-semibold">
-                        Brand
-                      </th>
-                      <th className="px-4 py-3 text-left font-semibold">
-                        Category
-                      </th>
-                      <th className="px-4 py-3 text-left font-semibold">
-                        Quality
-                      </th>
-                      <th className="px-4 py-3 text-left font-semibold">
-                        Confidence
-                      </th>
-                      <th className="px-4 py-3 text-left font-semibold">
-                        Enrichment
-                      </th>
-                      <th className="px-4 py-3 text-left font-semibold">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredProducts.map((product) => (
+                <button
+                  key={product.id}
+                  type="button"
+                  onClick={() => onProductSelect(product.id)}
+                  className="
+        group relative overflow-hidden rounded-2xl
+        border border-border/70
+        bg-card text-left
+        shadow-sm
+        transition-all duration-300 ease-out
+        hover:-translate-y-1.5
+        hover:border-primary/40
+        hover:shadow-2xl hover:shadow-primary/10
+        focus:outline-none
+        focus:ring-2 focus:ring-primary/40
+      "
+                >
+                  {/* Top intelligence glow */}
+                  <div
+                    className="
+          pointer-events-none absolute inset-x-0 top-0 h-px
+          bg-gradient-to-r from-transparent via-primary/70 to-transparent
+          opacity-0 transition-opacity duration-300
+          group-hover:opacity-100
+        "
+                  />
 
-                  <tbody>
-                    {filteredProducts.map((product) => (
-                      <tr
-                        key={product.id}
-                        onClick={() => onProductSelect(product.id)}
-                        className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/20"
-                      >
-                        <td className="max-w-xs px-4 py-4">
-                          <div className="font-medium text-foreground">
-                            {product.title}
-                          </div>
+                  {/* Product visual */}
+                  <div className="relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-background to-cyan-500/5">
+                    <div
+                      className="
+            absolute h-32 w-32 rounded-full
+            bg-primary/10 blur-3xl
+            transition-all duration-500
+            group-hover:scale-125
+            group-hover:bg-primary/15
+          "
+                    />
 
-                          <div className="mt-1 font-mono text-xs text-muted-foreground">
-                            {product.sku}
-                          </div>
-                        </td>
+                    {product.images?.[0] ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.title}
+                        className="
+                          relative z-10 h-32 w-32 object-contain
+                          drop-shadow-xl
+                          transition-transform duration-500 ease-out
+                          group-hover:scale-110
+                        "
+                      />
+                    ) : (
+                      <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-2xl border border-border/60 bg-background/60 text-muted-foreground">
+                        <Package className="h-10 w-10" />
+                      </div>
+                    )}
 
-                        <td className="px-4 py-4 text-muted-foreground">
-                          {product.brand}
-                        </td>
+                    {/* Status */}
+                    <div className="absolute left-3 top-3 z-20">
+                      <StatusBadge status={product.status} />
+                    </div>
 
-                        <td className="max-w-xs px-4 py-4 text-muted-foreground">
-                          {product.category}
-                        </td>
+                    {/* Open indicator */}
+                    <div
+                      className="
+            absolute right-3 top-3 z-20
+            flex h-8 w-8 items-center justify-center
+            rounded-full border border-border/60
+            bg-background/70 backdrop-blur
+            opacity-0
+            translate-x-2
+            transition-all duration-300
+            group-hover:translate-x-0
+            group-hover:opacity-100
+          "
+                    >
+                      <ArrowUpRight className="h-4 w-4 text-primary" />
+                    </div>
+                  </div>
 
-                        <td className="px-4 py-4">
-                          <span className="font-semibold">
-                            {product.qualityScore}%
+                  {/* Product information */}
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-base font-bold tracking-tight text-foreground">
+                          {product.title}
+                        </p>
+
+                        <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                          {product.sku}
+                        </p>
+                      </div>
+
+                      <Sparkles
+                        className="
+              h-4 w-4 shrink-0 text-primary/40
+              transition-all duration-300
+              group-hover:scale-110
+              group-hover:text-primary
+            "
+                      />
+                    </div>
+
+                    {/* Brand / category */}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/40 px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground">
+                        <Tag className="h-3 w-3" />
+                        {product.brand}
+                      </span>
+
+                      <span className="truncate rounded-lg border border-border/60 bg-secondary/40 px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground">
+                        {product.category}
+                      </span>
+                    </div>
+
+                    {/* Metrics */}
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-border/50 bg-secondary/20 p-3">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                          Quality
+                        </p>
+
+                        <div className="mt-1.5 flex items-end gap-1">
+                          <span className="text-lg font-black text-foreground">
+                            {product.qualityScore}
                           </span>
-                        </td>
+                          <span className="mb-0.5 text-[10px] font-semibold text-muted-foreground">
+                            %
+                          </span>
+                        </div>
 
-                        <td className="px-4 py-4">
-                          <ConfidenceBadge
-                            score={product.confidenceScore}
+                        <div className="mt-2 h-1 overflow-hidden rounded-full bg-secondary">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-700"
+                            style={{
+                              width: `${Math.min(product.qualityScore, 100)}%`,
+                            }}
                           />
-                        </td>
+                        </div>
+                      </div>
 
-                        <td className="px-4 py-4">
-                          <span className="text-xs font-medium text-muted-foreground capitalize">
-                            {product.enrichmentStatus.replace('_', ' ')}
-                          </span>
-                        </td>
+                      <div className="rounded-xl border border-border/50 bg-secondary/20 p-3">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                          Confidence
+                        </p>
 
-                        <td className="px-4 py-4">
-                          <StatusBadge status={product.status} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        <div className="mt-2">
+                          <ConfidenceBadge score={product.confidenceScore} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
+                      <span className="text-[10px] font-semibold capitalize text-muted-foreground">
+                        {product.enrichmentStatus.replace('_', ' ')}
+                      </span>
+
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-primary opacity-70 transition-all duration-300 group-hover:gap-2 group-hover:opacity-100">
+                        Inspect
+                        <ArrowUpRight className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+
             </div>
           )}
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

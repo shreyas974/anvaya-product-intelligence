@@ -568,62 +568,90 @@ export function IntelligencePage() {
         description="Turn catalog data into actionable intelligence using semantic analysis, benchmarking and AI-driven insights."
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <BarChart3 className="h-5 w-5 text-primary" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="group overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
+          <CardContent className="relative p-5">
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/10 blur-2xl transition-all duration-300 group-hover:bg-primary/20" />
+            <div className="relative flex items-start justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Categories
                 </p>
-                <p className="text-2xl font-bold">{categories.length}</p>
+                <p className="mt-2 text-3xl font-bold tracking-tight">
+                  {categories.length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Active catalog segments
+                </p>
+              </div>
+              <div className="rounded-xl border border-primary/15 bg-primary/10 p-3 transition-transform duration-300 group-hover:scale-110">
+                <BarChart3 className="h-5 w-5 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Copy className="h-5 w-5 text-primary" />
+        <Card className="group overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
+          <CardContent className="relative p-5">
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/10 blur-2xl transition-all duration-300 group-hover:bg-primary/20" />
+            <div className="relative flex items-start justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Duplicate Clusters
                 </p>
-                <p className="text-2xl font-bold">
+                <p className="mt-2 text-3xl font-bold tracking-tight">
                   {duplicates.length}
                 </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Semantic matches detected
+                </p>
+              </div>
+              <div className="rounded-xl border border-primary/15 bg-primary/10 p-3 transition-transform duration-300 group-hover:scale-110">
+                <Copy className="h-5 w-5 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <GitBranch className="h-5 w-5 text-primary" />
+        <Card className="group overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
+          <CardContent className="relative p-5">
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/10 blur-2xl transition-all duration-300 group-hover:bg-primary/20" />
+            <div className="relative flex items-start justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Taxonomy Roots
                 </p>
-                <p className="text-2xl font-bold">{taxonomy.length}</p>
+                <p className="mt-2 text-3xl font-bold tracking-tight">
+                  {taxonomy.length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Canonical hierarchy nodes
+                </p>
+              </div>
+              <div className="rounded-xl border border-primary/15 bg-primary/10 p-3 transition-transform duration-300 group-hover:scale-110">
+                <GitBranch className="h-5 w-5 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <DollarSign className="h-5 w-5 text-primary" />
+        <Card className="group overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
+          <CardContent className="relative p-5">
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/10 blur-2xl transition-all duration-300 group-hover:bg-primary/20" />
+            <div className="relative flex items-start justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Auto Remediation
                 </p>
-                <p className="text-2xl font-bold">
+                <p className="mt-2 text-3xl font-bold tracking-tight text-emerald-600">
                   {mockAnomalyInsightSummary.autoRemediationRatePct}%
                 </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Issues resolved automatically
+                </p>
+              </div>
+              <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/10 p-3 transition-transform duration-300 group-hover:scale-110">
+                <DollarSign className="h-5 w-5 text-emerald-600" />
               </div>
             </div>
           </CardContent>
