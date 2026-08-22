@@ -1,0 +1,338 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anvaya-product-intelligence/schema/product.schema.json",
+  "title": "ANVAYA Product",
+  "description": "Canonical product data contract for the ANVAYA Product Intelligence platform.",
+  "type": "object",
+  "required": [
+    "id",
+    "sku",
+    "title",
+    "description",
+    "brand",
+    "category",
+    "price",
+    "currency",
+    "images",
+    "attributes",
+    "rawData",
+    "qualityScore",
+    "enrichmentStatus",
+    "confidenceScore",
+    "status",
+    "timestamps"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the product."
+    },
+    "sku": {
+      "type": "string",
+      "description": "Stock keeping unit identifying the catalog item."
+    },
+    "title": {
+      "type": "string",
+      "description": "Current standardized product title."
+    },
+    "description": {
+      "type": "string",
+      "description": "Current product description."
+    },
+    "brand": {
+      "type": "string",
+      "description": "Current normalized brand name."
+    },
+    "category": {
+      "type": "string",
+      "description": "Current canonical product category."
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Current product price."
+    },
+    "currency": {
+      "type": "string",
+      "description": "Currency code used for the price."
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs or identifiers for product images."
+    },
+    "attributes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "array"
+        ]
+      },
+      "description": "Normalized product attributes."
+    },
+    "rawData": {
+      "$ref": "#/$defs/rawProductData"
+    },
+    "enrichedData": {
+      "$ref": "#/$defs/enrichedProductData"
+    },
+    "qualityScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Overall catalog quality score."
+    },
+    "enrichmentStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "enriched",
+        "failed",
+        "needs_review"
+      ]
+    },
+    "confidenceScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Overall confidence in AI enrichment results."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "raw",
+        "cleaned",
+        "enriched",
+        "flagged",
+        "approved"
+      ]
+    },
+    "timestamps": {
+      "$ref": "#/$defs/productTimestamps"
+    }
+  },
+  "$defs": {
+    "rawProductData": {
+      "type": "object",
+      "properties": {
+        "rawTitle": {
+          "type": "string"
+        },
+        "rawDescription": {
+          "type": "string"
+        },
+        "rawSpecs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number"
+            ]
+          }
+        },
+        "sourceCatalog": {
+          "type": "string"
+        },
+        "rawBrand": {
+          "type": "string"
+        },
+        "rawCategory": {
+          "type": "string"
+        },
+        "rawPriceString": {
+          "type": "string"
+        },
+        "unparsedPayload": {
+          "type": "object"
+        }
+      }
+    },
+    "enrichedProductData": {
+      "type": "object",
+      "required": [
+        "standardizedTitle",
+        "normalizedBrand",
+        "canonicalCategory",
+        "normalizedAttributes",
+        "recoveredAttributes",
+        "missingAttributes",
+        "perAttributeConfidence",
+        "explainability",
+        "enrichmentMetadata"
+      ],
+      "properties": {
+        "standardizedTitle": {
+          "type": "string"
+        },
+        "normalizedBrand": {
+          "type": "string"
+        },
+        "canonicalCategory": {
+          "type": "string"
+        },
+        "normalizedAttributes": {
+          "type": "object"
+        },
+        "recoveredAttributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/recoveredAttribute"
+          }
+        },
+        "missingAttributes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "perAttributeConfidence": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "explainability": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/explainability"
+          }
+        },
+        "enrichmentMetadata": {
+          "$ref": "#/$defs/enrichmentMetadata"
+        }
+      }
+    },
+    "recoveredAttribute": {
+      "type": "object",
+      "required": [
+        "key",
+        "displayName",
+        "recoveredValue",
+        "confidence",
+        "explainability"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "originalValue": {},
+        "recoveredValue": {},
+        "unit": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "explainability": {
+          "$ref": "#/$defs/explainability"
+        }
+      }
+    },
+    "explainability": {
+      "type": "object",
+      "required": [
+        "source",
+        "evidenceSnippet",
+        "extractionMethod",
+        "confidence",
+        "validationStatus"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "evidenceSnippet": {
+          "type": "string"
+        },
+        "extractionMethod": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "validationStatus": {
+          "type": "string"
+        },
+        "ruleApplied": {
+          "type": "string"
+        }
+      }
+    },
+    "enrichmentMetadata": {
+      "type": "object",
+      "required": [
+        "pipelineVersion",
+        "modelProvider",
+        "executionTimeMs",
+        "fieldsProcessed",
+        "attributesRecoveredCount",
+        "safetyAuditPassed",
+        "lastEnrichedAt"
+      ],
+      "properties": {
+        "pipelineVersion": {
+          "type": "string"
+        },
+        "modelProvider": {
+          "type": "string"
+        },
+        "executionTimeMs": {
+          "type": "number"
+        },
+        "fieldsProcessed": {
+          "type": "number"
+        },
+        "attributesRecoveredCount": {
+          "type": "number"
+        },
+        "safetyAuditPassed": {
+          "type": "boolean"
+        },
+        "lastEnrichedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "productTimestamps": {
+      "type": "object",
+      "required": [
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastEnrichedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastAuditedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
