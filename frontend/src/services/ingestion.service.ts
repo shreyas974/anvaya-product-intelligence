@@ -1,30 +1,36 @@
-export interface IngestionRequest {
-  fileName: string;
-  fileType: 'csv' | 'json';
-  rowCount: number;
-  columnCount: number;
-}
+import { apiClient } from '@/services/api/apiClient';
 
 export interface IngestionResult {
   ingestionId: string;
-  status: 'started';
+  status: 'started' | 'completed';
   message: string;
 }
 
-/**
- * Starts an ingestion job.
- *
- * This is currently a frontend-safe placeholder because
- * the backend ingestion endpoint is not available in this checkout.
- */
+interface PipelineResponse {
+  source_file?: string;
+  pipeline_status?: string;
+  ai_response?: unknown;
+  ai_message?: string;
+}
+
 export async function startIngestion(
-  request: IngestionRequest
+  file: File
 ): Promise<IngestionResult> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const result = await apiClient.post<PipelineResponse>(
+    '/documents/pipeline',
+    formData,
+  );
+
+  const isCompleted = result.pipeline_status === 'completed';
 
   return {
-    ingestionId: `local-${Date.now()}`,
-    status: 'started',
-    message: `Ingestion started for ${request.fileName}.`,
+    ingestionId: result.source_file ?? file.name,
+    status: isCompleted ? 'completed' : 'started',
+    message: isCompleted
+      ? `Ingestion completed for ${file.name}.`
+      : result.ai_message ?? `Ingestion started for ${file.name}.`,
   };
 }

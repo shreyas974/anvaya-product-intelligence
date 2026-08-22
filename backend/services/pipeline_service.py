@@ -1,38 +1,35 @@
-from pathlib import Path
-
 from backend.controllers.document_controller import process_uploaded_document
-from backend.services.ai_service import generate_ai_response
+from backend.services.ai_service import enrich_product, AIServiceError
 
 
 async def run_document_pipeline(path: str) -> dict:
     """
-    Run the backend document-processing pipeline.
-
-    Flow:
-    document processing
-    -> normalization
-    -> validation
-    -> evidence
-    -> AI service
+    Run document processing, normalization, validation, evidence,
+    and AI enrichment for tabular product data.
     """
-
     processed = process_uploaded_document(path)
 
-    # Build a deterministic prompt from the processed document.
     if processed["file_type"] == "pdf":
-        source_data = processed.get("text", "")
-    else:
-        source_data = processed.get("data", [])
+        processed["ai_response"] = None
+        processed["pipeline_status"] = "completed_without_ai"
+        processed["ai_message"] = (
+            "PDF processed successfully; current AI microservice "
+            "expects structured product records."
+        )
+        return processed
 
-    prompt = (
-        "Analyze the following processed industrial product document "
-        "and return a concise useful summary.\n\n"
-        f"{source_data}"
-    )
+    ai_results = []
 
-    ai_response = await generate_ai_response(prompt)
+    for row in processed.get("data", []):
+        try:
+            ai_results.append(await enrich_product(row))
+        except AIServiceError as exc:
+            processed["ai_response"] = None
+            processed["pipeline_status"] = "ai_error"
+            processed["ai_message"] = str(exc)
+            return processed
 
-    processed["ai_response"] = ai_response
+    processed["ai_response"] = ai_results
     processed["pipeline_status"] = "completed"
 
     return processed

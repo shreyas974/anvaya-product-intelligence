@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = ""
 
     ai_service_url: str = ""
+    ai_enrichment_url: str = ""
     ai_service_timeout: float = 30.0
 
     cors_origins: str = "http://localhost:3000"

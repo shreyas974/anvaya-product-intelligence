@@ -115,14 +115,7 @@ if (records.length === 0) {
     setIngestionMessage(null);
 
     try {
-      const result = await startIngestion({
-        fileName: selectedFile.name,
-        fileType: selectedFile.name.toLowerCase().endsWith('.json')
-          ? 'json'
-          : 'csv',
-        rowCount: rows.length,
-        columnCount: headers.length,
-      });
+      const result = await startIngestion(selectedFile);
 
       setIngestionMessage(result.message);
     } catch {

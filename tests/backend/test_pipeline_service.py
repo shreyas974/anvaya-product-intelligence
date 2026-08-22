@@ -20,13 +20,29 @@ def test_document_pipeline_completes_successfully():
             "backend.services.pipeline_service.process_uploaded_document",
             return_value=processed_document,
         ), patch(
-            "backend.services.pipeline_service.generate_ai_response",
-            new=AsyncMock(return_value="Product summary"),
+            "backend.services.pipeline_service.enrich_product",
+            new=AsyncMock(
+                return_value={
+                    "success": True,
+                    "enriched_record": {
+                        "Mfg_Part_Num": "ANVAYA-UNKNOWN",
+                        "Part_Desc": "Product A",
+                    },
+                }
+            ),
         ) as mock_ai:
             result = await run_document_pipeline("products.csv")
 
         assert result["pipeline_status"] == "completed"
-        assert result["ai_response"] == "Product summary"
+        assert result["ai_response"] == [
+            {
+                "success": True,
+                "enriched_record": {
+                    "Mfg_Part_Num": "ANVAYA-UNKNOWN",
+                    "Part_Desc": "Product A",
+                },
+            }
+        ]
         assert result["source_file"] == "products.csv"
         mock_ai.assert_awaited_once()
 
