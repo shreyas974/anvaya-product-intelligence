@@ -1,0 +1,111 @@
+{
+  "products": [
+    {
+      "id": "prod-001",
+      "sku": "ANV-LAP-001",
+      "title": "Dell Inspiron 15 Laptop",
+      "description": "15.6-inch laptop with Intel Core i5 processor, 16GB RAM and 512GB SSD.",
+      "brand": "Dell",
+      "category": "Laptops",
+      "price": 64999,
+      "currency": "INR",
+      "images": [
+        "https://example.com/images/dell-inspiron-15.jpg"
+      ],
+      "attributes": {
+        "processor": "Intel Core i5",
+        "ram": "16GB",
+        "storage": "512GB SSD",
+        "screen_size": 15.6,
+        "operating_system": "Windows 11"
+      },
+      "rawData": {
+        "rawTitle": "Dell Inspiron 15 i5 16GB 512 SSD Laptop",
+        "rawDescription": "Dell laptop with i5 processor",
+        "rawBrand": "DELL",
+        "rawCategory": "Notebook Computers",
+        "rawPriceString": "₹64,999"
+      },
+      "qualityScore": 92,
+      "enrichmentStatus": "enriched",
+      "confidenceScore": 0.96,
+      "status": "approved",
+      "timestamps": {
+        "createdAt": "2026-08-19T08:00:00Z",
+        "updatedAt": "2026-08-19T08:30:00Z",
+        "lastEnrichedAt": "2026-08-19T08:25:00Z"
+      }
+    },
+    {
+      "id": "prod-002",
+      "sku": "ANV-PHN-002",
+      "title": "Samsung Galaxy S25",
+      "description": "Premium smartphone with 6.2-inch display and advanced camera system.",
+      "brand": "Samsung",
+      "category": "Smartphones",
+      "price": 74999,
+      "currency": "INR",
+      "images": [
+        "https://example.com/images/samsung-galaxy-s25.jpg"
+      ],
+      "attributes": {
+        "display_size": 6.2,
+        "ram": "12GB",
+        "storage": "256GB",
+        "camera": "50MP",
+        "battery": "4000mAh"
+      },
+      "rawData": {
+        "rawTitle": "Samsung Galaxy S25 12GB 256GB",
+        "rawDescription": "Samsung S25 smartphone",
+        "rawBrand": "SAMSUNG",
+        "rawCategory": "Mobile Phones",
+        "rawPriceString": "₹74,999"
+      },
+      "qualityScore": 88,
+      "enrichmentStatus": "enriched",
+      "confidenceScore": 0.91,
+      "status": "enriched",
+      "timestamps": {
+        "createdAt": "2026-08-19T08:05:00Z",
+        "updatedAt": "2026-08-19T08:35:00Z",
+        "lastEnrichedAt": "2026-08-19T08:30:00Z"
+      }
+    },
+    {
+      "id": "prod-003",
+      "sku": "ANV-HDP-003",
+      "title": "Sony Wireless Headphones",
+      "description": "Wireless noise-cancelling headphones with long battery life.",
+      "brand": "Sony",
+      "category": "Headphones",
+      "price": 19999,
+      "currency": "INR",
+      "images": [
+        "https://example.com/images/sony-headphones.jpg"
+      ],
+      "attributes": {
+        "connectivity": "Bluetooth",
+        "noise_cancellation": true,
+        "battery_life_hours": 30,
+        "color": "Black"
+      },
+      "rawData": {
+        "rawTitle": "Sony Bluetooth NC Headphones Black",
+        "rawDescription": "Sony wireless headphones",
+        "rawBrand": "SONY",
+        "rawCategory": "Audio",
+        "rawPriceString": "₹19,999"
+      },
+      "qualityScore": 76,
+      "enrichmentStatus": "needs_review",
+      "confidenceScore": 0.78,
+      "status": "flagged",
+      "timestamps": {
+        "createdAt": "2026-08-19T08:10:00Z",
+        "updatedAt": "2026-08-19T08:40:00Z",
+        "lastEnrichedAt": "2026-08-19T08:35:00Z"
+      }
+    }
+  ]
+}
