@@ -73,7 +73,7 @@ export function MainLayout({
                   activeSection={active}
                   onSectionChange={handleSectionChange}
                   collapsed={false}
-                  onToggleCollapse={() => {}}
+                  onToggleCollapse={() => { }}
                   className="border-none w-full bg-transparent"
                 />
               </div>
@@ -86,6 +86,7 @@ export function MainLayout({
           <TopNav
             activeSection={active}
             onOpenMobileMenu={() => setMobileOpen(true)}
+            onNavigate={handleSectionChange}
           />
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
             {children}
