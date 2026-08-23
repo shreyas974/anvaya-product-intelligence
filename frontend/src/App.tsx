@@ -37,12 +37,29 @@ function AppContent({ initialView = 'landing' }: AppProps) {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
   const [userRole, setUserRole] = useState<'ADMIN' | 'DATA_MANAGER' | 'REVIEWER' | 'VIEWER'>('ADMIN');
-  const [userName, setUserName] = useState('Devin Vance');
-  const [userEmail, setUserEmail] = useState('lead.architect@enterprise.com');
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
+    // Restore authenticated session if present
+    try {
+      if (typeof window !== 'undefined') {
+        const rawSession = localStorage.getItem('anvaya_active_session');
+        if (rawSession) {
+          const session = JSON.parse(rawSession);
+          if (session?.email) {
+            setUserEmail(session.email);
+            setUserName(session.name || session.email.split('@')[0]);
+            if (session.role) setUserRole(session.role);
+          }
+        }
+      }
+    } catch {
+      // Ignore in strict runners
+    }
+
     // Check onboarding status for first-time non-test sessions
     try {
       const seenOnboarding = typeof window !== 'undefined' ? localStorage.getItem('anvaya_onboarding_completed') : 'true';
@@ -72,10 +89,20 @@ function AppContent({ initialView = 'landing' }: AppProps) {
 
   const handleNavigate = (sectionId: string) => {
     if (sectionId === 'landing') {
+      try {
+        localStorage.removeItem('anvaya_active_session');
+      } catch {}
+      setUserName('');
+      setUserEmail('');
       setCurrentView('landing');
       return;
     }
     if (sectionId === 'login') {
+      try {
+        localStorage.removeItem('anvaya_active_session');
+      } catch {}
+      setUserName('');
+      setUserEmail('');
       setCurrentView('login');
       return;
     }
@@ -104,7 +131,7 @@ function AppContent({ initialView = 'landing' }: AppProps) {
   if (currentView === 'landing') {
     return (
       <LandingPage
-        onGetStarted={() => setCurrentView('app')}
+        onGetStarted={() => setCurrentView('login')}
         onLogin={() => setCurrentView('login')}
       />
     );

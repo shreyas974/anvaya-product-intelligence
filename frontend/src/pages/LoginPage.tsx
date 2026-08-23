@@ -10,6 +10,7 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -20,33 +21,167 @@ export interface LoginPageProps {
   onBackToLanding?: () => void;
 }
 
+interface StoredUser {
+  name: string;
+  email: string;
+  password: string;
+  company: string;
+  role: 'ADMIN' | 'DATA_MANAGER' | 'REVIEWER' | 'VIEWER';
+  createdAt: string;
+}
+
+const STORAGE_USERS_KEY = 'anvaya_registered_users';
+const STORAGE_SESSION_KEY = 'anvaya_active_session';
+
+function getRegisteredUsers(): StoredUser[] {
+  try {
+    if (typeof window === 'undefined') return [];
+    const raw = localStorage.getItem(STORAGE_USERS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRegisteredUser(user: StoredUser): void {
+  try {
+    if (typeof window === 'undefined') return;
+    const users = getRegisteredUsers();
+    const existingIndex = users.findIndex((u) => u.email.toLowerCase() === user.email.toLowerCase());
+    if (existingIndex >= 0) {
+      users[existingIndex] = user;
+    } else {
+      users.push(user);
+    }
+    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
+  } catch {
+    // Ignore in restrictive contexts
+  }
+}
+
 export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToLanding }: LoginPageProps) {
-  const [tab, setTab] = useState<'login' | 'signup' | 'forgot'>('login');
-  const [email, setEmail] = useState('lead.architect@enterprise.com');
-  const [password, setPassword] = useState('••••••••••••');
-  const [name, setName] = useState('Devin Vance');
-  const [company, setCompany] = useState('Industrial Supply Corp');
-  const [confirmPassword, setConfirmPassword] = useState('••••••••••••');
+  const [tab, setTab] = useState<'login' | 'signup' | 'forgot'>('signup');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [company, setCompany] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'ADMIN' | 'DATA_MANAGER' | 'REVIEWER' | 'VIEWER'>('ADMIN');
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setSuccessMessage(null);
+    setErrorMessage(null);
     setIsLoading(true);
-    setMessage(null);
 
     setTimeout(() => {
       setIsLoading(false);
-      if (tab === 'forgot') {
-        setMessage('Password reset instructions sent to your work email.');
-      } else if (onLoginSuccess) {
-        onLoginSuccess(selectedRole, name, email);
-      } else if (onLogin) {
-        onLogin(selectedRole);
+      const normalizedEmail = email.trim().toLowerCase();
+
+      if (!normalizedEmail || !normalizedEmail.includes('@')) {
+        setErrorMessage('Please enter a valid work email address.');
+        return;
       }
-    }, 450);
+
+      if (tab === 'forgot') {
+        const users = getRegisteredUsers();
+        const userExists = users.some((u) => u.email.toLowerCase() === normalizedEmail);
+        if (!userExists) {
+          setErrorMessage('No account found with this email. Please create an account.');
+        } else {
+          setSuccessMessage(`Password reset instructions sent to ${normalizedEmail}.`);
+        }
+        return;
+      }
+
+      if (tab === 'signup') {
+        if (!name.trim()) {
+          setErrorMessage('Please enter your full name.');
+          return;
+        }
+        if (!company.trim()) {
+          setErrorMessage('Please enter your company or organization name.');
+          return;
+        }
+        if (password.length < 6) {
+          setErrorMessage('Password must be at least 6 characters long.');
+          return;
+        }
+        if (password !== confirmPassword) {
+          setErrorMessage('Passwords do not match. Please verify and re-type.');
+          return;
+        }
+
+        const users = getRegisteredUsers();
+        const alreadyExists = users.some((u) => u.email.toLowerCase() === normalizedEmail);
+        if (alreadyExists) {
+          setErrorMessage('An account with this email already exists. Please switch to Sign In.');
+          return;
+        }
+
+        const newUser: StoredUser = {
+          name: name.trim(),
+          email: normalizedEmail,
+          password,
+          company: company.trim(),
+          role: selectedRole,
+          createdAt: new Date().toISOString(),
+        };
+
+        saveRegisteredUser(newUser);
+
+        try {
+          localStorage.setItem(
+            STORAGE_SESSION_KEY,
+            JSON.stringify({ email: newUser.email, name: newUser.name, role: newUser.role, company: newUser.company })
+          );
+        } catch {}
+
+        if (onLoginSuccess) {
+          onLoginSuccess(newUser.role, newUser.name, newUser.email);
+        } else if (onLogin) {
+          onLogin(newUser.role);
+        }
+        return;
+      }
+
+      if (tab === 'login') {
+        if (!password) {
+          setErrorMessage('Please enter your password.');
+          return;
+        }
+
+        const users = getRegisteredUsers();
+        const user = users.find((u) => u.email.toLowerCase() === normalizedEmail);
+
+        if (!user) {
+          setErrorMessage('No account found with this email. Please switch to Create Account to register.');
+          return;
+        }
+
+        if (user.password !== password) {
+          setErrorMessage('Incorrect password. Please verify your credentials.');
+          return;
+        }
+
+        try {
+          localStorage.setItem(
+            STORAGE_SESSION_KEY,
+            JSON.stringify({ email: user.email, name: user.name, role: user.role, company: user.company })
+          );
+        } catch {}
+
+        if (onLoginSuccess) {
+          onLoginSuccess(user.role, user.name, user.email);
+        } else if (onLogin) {
+          onLogin(user.role);
+        }
+      }
+    }, 350);
   };
 
   const handleBack = onBackToLanding || onExploreLanding;
@@ -70,18 +205,11 @@ export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToL
         <div className="flex rounded-xl bg-[rgba(241,236,231,0.7)] p-1 border border-[rgba(120,90,70,0.1)] mb-6">
           <button
             type="button"
-            onClick={() => { setTab('login'); setMessage(null); }}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-              tab === 'login'
-                ? 'bg-[#FFFBF7] text-[#E8703A] shadow-sm'
-                : 'text-[#6B5E56] hover:text-[#2B2320]'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => { setTab('signup'); setMessage(null); }}
+            onClick={() => {
+              setTab('signup');
+              setSuccessMessage(null);
+              setErrorMessage(null);
+            }}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
               tab === 'signup'
                 ? 'bg-[#FFFBF7] text-[#E8703A] shadow-sm'
@@ -92,7 +220,26 @@ export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToL
           </button>
           <button
             type="button"
-            onClick={() => { setTab('forgot'); setMessage(null); }}
+            onClick={() => {
+              setTab('login');
+              setSuccessMessage(null);
+              setErrorMessage(null);
+            }}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              tab === 'login'
+                ? 'bg-[#FFFBF7] text-[#E8703A] shadow-sm'
+                : 'text-[#6B5E56] hover:text-[#2B2320]'
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTab('forgot');
+              setSuccessMessage(null);
+              setErrorMessage(null);
+            }}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
               tab === 'forgot'
                 ? 'bg-[#FFFBF7] text-[#E8703A] shadow-sm'
@@ -103,10 +250,18 @@ export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToL
           </button>
         </div>
 
-        {message && (
-          <div className="mb-4 p-3 rounded-xl bg-[#FBEEDD] border border-[rgba(199,127,46,0.3)] text-xs text-[#C77F2E] flex items-center gap-2">
+        {/* Feedback Banners */}
+        {successMessage && (
+          <div className="mb-4 p-3.5 rounded-xl bg-[#FBEEDD] border border-[rgba(199,127,46,0.3)] text-xs text-[#C77F2E] flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-            <span>{message}</span>
+            <span>{successMessage}</span>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="mb-4 p-3.5 rounded-xl bg-[#FBE3DE] border border-[rgba(178,59,46,0.3)] text-xs text-[#B23B2E] flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            <span>{errorMessage}</span>
           </div>
         )}
 
@@ -122,7 +277,7 @@ export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToL
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Jane Doe"
+                    placeholder="Enter your full name"
                     className="w-full bg-transparent text-xs text-[#2B2320] outline-none"
                     required
                   />
@@ -137,7 +292,7 @@ export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToL
                     type="text"
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
-                    placeholder="Acme Industrial Inc."
+                    placeholder="Enter your enterprise name"
                     className="w-full bg-transparent text-xs text-[#2B2320] outline-none"
                     required
                   />
@@ -168,7 +323,11 @@ export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToL
                 {tab === 'login' && (
                   <button
                     type="button"
-                    onClick={() => setTab('forgot')}
+                    onClick={() => {
+                      setTab('forgot');
+                      setErrorMessage(null);
+                      setSuccessMessage(null);
+                    }}
                     className="text-[11px] font-semibold text-[#E8703A] hover:underline"
                   >
                     Forgot Password?
@@ -181,7 +340,7 @@ export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToL
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
+                  placeholder={tab === 'signup' ? 'Create a secure password (min 6 chars)' : 'Enter your password'}
                   className="w-full bg-transparent text-xs text-[#2B2320] outline-none"
                   required
                 />
@@ -197,45 +356,45 @@ export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToL
           )}
 
           {tab === 'signup' && (
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[#6B5E56]">Confirm Password</label>
-              <div className="flex items-center rounded-xl border border-[rgba(120,90,70,0.15)] bg-white/80 px-3 py-2.5">
-                <Lock className="h-4 w-4 text-[#9C8F86] mr-2 shrink-0" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm password"
-                  className="w-full bg-transparent text-xs text-[#2B2320] outline-none"
-                  required
-                />
+            <>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#6B5E56]">Confirm Password</label>
+                <div className="flex items-center rounded-xl border border-[rgba(120,90,70,0.15)] bg-white/80 px-3 py-2.5">
+                  <Lock className="h-4 w-4 text-[#9C8F86] mr-2 shrink-0" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-type your password"
+                    className="w-full bg-transparent text-xs text-[#2B2320] outline-none"
+                    required
+                  />
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Role selector for demo ease */}
-          {tab === 'login' && (
-            <div className="pt-1">
-              <label className="text-[11px] font-semibold text-[#8A7E76] block mb-1.5">
-                Sign in with Enterprise Role (RBAC):
-              </label>
-              <div className="grid grid-cols-4 gap-1.5 text-center">
-                {(['ADMIN', 'DATA_MANAGER', 'REVIEWER', 'VIEWER'] as const).map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => setSelectedRole(role)}
-                    className={`py-1 px-1 text-[10px] font-bold rounded-lg border transition-all ${
-                      selectedRole === role
-                        ? 'border-[#E8703A] bg-[#FBEEDD] text-[#E8703A]'
-                        : 'border-[rgba(120,90,70,0.15)] text-[#6B5E56] hover:bg-white/60'
-                    }`}
-                  >
-                    {role.replace('_', ' ')}
-                  </button>
-                ))}
+              {/* Role selection for account creation */}
+              <div className="pt-1">
+                <label className="text-[11px] font-semibold text-[#8A7E76] block mb-1.5">
+                  Assign Account Role (RBAC):
+                </label>
+                <div className="grid grid-cols-4 gap-1.5 text-center">
+                  {(['ADMIN', 'DATA_MANAGER', 'REVIEWER', 'VIEWER'] as const).map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setSelectedRole(role)}
+                      className={`py-1.5 px-1 text-[10px] font-bold rounded-lg border transition-all ${
+                        selectedRole === role
+                          ? 'border-[#E8703A] bg-[#FBEEDD] text-[#E8703A]'
+                          : 'border-[rgba(120,90,70,0.15)] text-[#6B5E56] hover:bg-white/60'
+                      }`}
+                    >
+                      {role.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           <Button
@@ -244,46 +403,19 @@ export function LoginPage({ onLogin, onLoginSuccess, onExploreLanding, onBackToL
             className="btn-sunrise-primary w-full py-5 text-xs font-bold rounded-xl shadow-md mt-4"
           >
             {isLoading ? (
-              <span>Authenticating Session...</span>
+              <span>Validating &amp; Creating Session...</span>
             ) : tab === 'login' ? (
               <span className="flex items-center justify-center gap-2">
                 Sign In to Workspace <ArrowRight className="w-4 h-4" />
               </span>
             ) : tab === 'signup' ? (
-              <span>Create Enterprise Workspace</span>
+              <span className="flex items-center justify-center gap-2">
+                Create Account &amp; Enter Workspace <ArrowRight className="w-4 h-4" />
+              </span>
             ) : (
               <span>Send Reset Instructions</span>
             )}
           </Button>
-
-          {/* SSO Buttons */}
-          <div className="relative my-4 text-center">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[rgba(120,90,70,0.12)]" />
-            </div>
-            <span className="relative bg-[#FFFBF7] px-3 text-[10px] uppercase tracking-wider text-[#9C8F86] font-semibold">
-              Or Enterprise SSO
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onLoginSuccess ? onLoginSuccess(selectedRole, name, email) : onLogin?.(selectedRole)}
-              className="border-[rgba(120,90,70,0.15)] bg-white/60 hover:bg-white/90 text-xs font-semibold text-[#2B2320] rounded-xl py-4"
-            >
-              Google Workspace
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onLoginSuccess ? onLoginSuccess(selectedRole, name, email) : onLogin?.(selectedRole)}
-              className="border-[rgba(120,90,70,0.15)] bg-white/60 hover:bg-white/90 text-xs font-semibold text-[#2B2320] rounded-xl py-4"
-            >
-              Microsoft 365
-            </Button>
-          </div>
         </form>
 
         {/* Back to landing link */}

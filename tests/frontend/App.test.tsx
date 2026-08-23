@@ -9,6 +9,9 @@ describe('App Integration', () => {
     setUseMocks(true);
     apiConfig.simulatedLatencyMinMs = 0;
     apiConfig.simulatedLatencyMaxMs = 0;
+    try {
+      localStorage.clear();
+    } catch {}
   });
 
   it('renders the Landing Page first on launch with hero and capabilities', async () => {
@@ -23,14 +26,33 @@ describe('App Integration', () => {
     expect(screen.getAllByRole('button', { name: /Sign In/i }).length).toBeGreaterThan(0);
   });
 
-  it('renders the Login Page when navigating to login', async () => {
+  it('renders the Login / Registration Page and allows creating an account', async () => {
     render(<App initialView="login" />);
 
     await waitFor(() => {
       expect(screen.getByText(/Enterprise Product Intelligence/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: /Sign In to Workspace/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Create Account & Enter Workspace/i })).toBeInTheDocument();
+
+    // Fill in registration form
+    fireEvent.change(screen.getByPlaceholderText(/Enter your full name/i), { target: { value: 'Alex Morgan' } });
+    fireEvent.change(screen.getByPlaceholderText(/Enter your enterprise name/i), { target: { value: 'Global Parts Co' } });
+    fireEvent.change(screen.getByPlaceholderText(/name@enterprise.com/i), { target: { value: 'alex@globalparts.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/Create a secure password/i), { target: { value: 'Password123!' } });
+    fireEvent.change(screen.getByPlaceholderText(/Re-type your password/i), { target: { value: 'Password123!' } });
+
+    // Submit registration
+    const createBtn = screen.getByRole('button', { name: /Create Account & Enter Workspace/i });
+    fireEvent.click(createBtn);
+
+    // Verify workspace is reached with new user
+    await waitFor(() => {
+      expect(screen.getByText('Welcome to ANVAYA')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Alex Morgan')).toBeInTheDocument();
+    expect(screen.getByText('alex@globalparts.com')).toBeInTheDocument();
   });
 
   it('renders Mission Control and allows navigation between sections', async () => {
