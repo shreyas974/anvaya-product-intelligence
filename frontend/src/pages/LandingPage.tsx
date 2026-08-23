@@ -82,7 +82,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFFBF7] text-[#2B2320] flex flex-col font-sans selection:bg-[#FBEEDD] selection:text-[#E8703A]">
+    <div className="min-h-screen bg-[#FFFBF7] bg-sunrise-canvas text-[#2B2320] flex flex-col selection:bg-[#FBEEDD] selection:text-[#E8703A]">
       {/* 1. Top Enterprise Nav */}
       <header className="sticky top-0 z-50 border-b border-[rgba(120,90,70,0.12)] bg-[rgba(255,251,247,0.85)] backdrop-blur-md px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
