@@ -48,10 +48,10 @@ export function AnalyticsPage({ onNavigate }: AnalyticsPageProps) {
   }, [activeDatasetId]);
 
   const kpis = overview?.kpis || {};
-  const totalProducts = Number(kpis.total_products || 0);
-  const avgCompleteness = Number(kpis.avg_completeness_score ?? kpis.completeness_score ?? 95);
-  const resolvedBrands = Number(kpis.resolved_brands_count ?? totalProducts ?? 0);
-  const passedValidation = Number(kpis.passed_validation_count ?? Math.round(totalProducts * 0.94));
+  const totalProducts = Number(kpis?.total_products ?? 0);
+  const avgCompleteness = Number(kpis?.avg_completeness_score ?? kpis?.completeness_score ?? 95);
+  const resolvedBrands = Number(kpis?.resolved_brands_count ?? totalProducts);
+  const passedValidation = Number(kpis?.passed_validation_count ?? Math.round(totalProducts * 0.94));
   const hasData = totalProducts > 0;
 
   if (!activeDatasetId || !hasData) {

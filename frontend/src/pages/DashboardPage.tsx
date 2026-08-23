@@ -44,10 +44,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
   }, [activeDatasetId]);
 
   const kpis = data?.kpis || {};
-  const totalProducts = Number(kpis.total_products || 0);
-  const avgCompleteness = Number(kpis.avg_completeness_score ?? kpis.completeness_score ?? 95);
-  const reviewCount = Number(kpis.review_queue_count ?? kpis.flagged_reviews ?? 0);
-  const passedValidation = Number(kpis.passed_validation_count ?? Math.round(totalProducts * 0.94));
+  const totalProducts = Number(kpis?.total_products ?? 0);
+  const avgCompleteness = Number(kpis?.avg_completeness_score ?? kpis?.completeness_score ?? 95);
+  const reviewCount = Number(kpis?.review_queue_count ?? kpis?.flagged_reviews ?? 0);
+  const passedValidation = Number(kpis?.passed_validation_count ?? Math.round(totalProducts * 0.94));
   const hasProducts = totalProducts > 0;
 
   // Empty Workspace State per Section 108 & 121
