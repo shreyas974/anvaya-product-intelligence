@@ -21,7 +21,7 @@ import json
 import logging
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import Mapping, Any, Optional, List
+from typing import Mapping, Any, Optional, List, TypedDict
 
 logger = logging.getLogger("anvaya.ai.free_llm")
 
@@ -36,9 +36,6 @@ class FreeLLMProvider(str, Enum):
     LOCAL = "local"
     KIMI = "kimi"
     AUTO = "auto"
-
-
-from typing import Mapping, Any, Optional, List, TypedDict
 
 
 class ProviderInfo(TypedDict):

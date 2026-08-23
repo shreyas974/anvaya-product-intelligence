@@ -1,451 +1,326 @@
 import { useState, useEffect } from 'react';
-import { AICopilot } from '@/components/common/AICopilot';
 import {
   Sparkles,
-  Database,
-  ShieldCheck,
   Zap,
-  Copy,
+  ShieldCheck,
+  Package,
+  Inbox,
   UploadCloud,
-  Layers,
-  RefreshCw,
+  FileSpreadsheet,
 } from 'lucide-react';
-import { PageHeader } from '@/components/common/PageHeader';
-import { StatCard } from '@/components/common/StatCard';
-import { SkeletonLoader } from '@/components/common/SkeletonLoader';
 import { Button } from '@/components/ui/button';
-
-import { QualityMetricsCard } from '@/components/dashboard/QualityMetricsCard';
-import { EnrichmentPipelineCard } from '@/components/dashboard/EnrichmentPipelineCard';
-import { MissingAttributesCard } from '@/components/dashboard/MissingAttributesCard';
-import { DuplicateClustersCard } from '@/components/dashboard/DuplicateClustersCard';
-import { CategoryInsightsCard } from '@/components/dashboard/CategoryInsightsCard';
-import { IngestionCTABanner } from '@/components/dashboard/IngestionCTABanner';
-
-import { qualityService } from '@/services/quality.service';
-import { enrichmentService } from '@/services/enrichment.service';
-import { productsService } from '@/services/products.service';
-import { intelligenceService } from '@/services/intelligence.service';
-import { mockMissingAttributeAnomalies } from '@/services/mocks/mockQuality';
-
-import { QualityMetricsSummary } from '@/types/quality.types';
-import { EnrichmentStatusResponse } from '@/types/enrichment.types';
-import { Product } from '@/types/product.types';
-import { SemanticDuplicateCluster, CategoryInsight } from '@/types/intelligence.types';
-import { NavigationSection } from '@/layouts/Sidebar';
-import { Brain, ArrowRight, CheckCircle2 } from 'lucide-react';
-
+import { request } from '@/services/api/apiClient';
+import { useDataset } from '@/context/DatasetContext';
 
 export interface DashboardPageProps {
-  onNavigate?: (section: NavigationSection) => void;
+  onNavigate?: (section: any) => void;
 }
 
 export function DashboardPage({ onNavigate }: DashboardPageProps) {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const [qualityMetrics, setQualityMetrics] = useState<QualityMetricsSummary | null>(null);
-  const [activeJobStatus, setActiveJobStatus] = useState<EnrichmentStatusResponse | undefined>(undefined);
-  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
-  const [duplicateClusters, setDuplicateClusters] = useState<SemanticDuplicateCluster[]>([]);
-  const [categoryInsights, setCategoryInsights] = useState<CategoryInsight[]>([]);
-
-  const loadDashboardData = async () => {
-    try {
-      const [metrics, jobStatus, productsResp, duplicates, categories] = await Promise.all([
-        qualityService.fetchQualityMetrics(),
-        enrichmentService.getEnrichmentStatus('job-enr-801'),
-        productsService.fetchProducts({ limit: 6 }),
-        intelligenceService.fetchDuplicates(),
-        intelligenceService.fetchCategoryInsights(),
-      ]);
-
-      setQualityMetrics(metrics);
-      setActiveJobStatus(jobStatus);
-      setRecentProducts(productsResp.data);
-      setDuplicateClusters(duplicates);
-      setCategoryInsights(categories);
-    } catch (err) {
-      console.error('Failed to load dashboard telemetry:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const { activeDataset, activeDatasetId } = useDataset();
+  const [, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    async function loadDashboard() {
+      if (!activeDatasetId) {
+        setData(null);
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await request<any>(`/dashboard/overview?dataset_id=${activeDatasetId}`);
+        if (res?.data) {
+          setData(res.data);
+        }
+      } catch (e) {
+        console.error('Failed to load dashboard data:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDashboard();
+  }, [activeDatasetId]);
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadDashboardData();
-  };
+  const kpis = data?.kpis;
+  const hasProducts = kpis && kpis.total_products > 0;
 
-  const handleBatchEnrich = async () => {
-    await productsService.batchEnrich({ productIds: ['prod-001', 'prod-002', 'prod-003'] });
-    await loadDashboardData();
-  };
-
-  const handleMergeCluster = async (clusterId: string) => {
-    console.log(`Merge cluster triggered for: ${clusterId}`);
-    if (onNavigate) onNavigate('intelligence');
-  };
-
-  if (loading) {
+  // Empty Workspace State per Section 108 & 121
+  if (!activeDatasetId || !hasProducts) {
     return (
-      <div className="space-y-6 animate-pulse" data-testid="dashboard-loading">
-        <div className="h-14 w-1/3 bg-muted rounded-md" />
-        <SkeletonLoader variant="stat" />
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="h-80 bg-card rounded-lg border border-border/50" />
-          <div className="h-80 bg-card rounded-lg border border-border/50" />
+      <div data-testid="dashboard-page" className="space-y-6 max-w-5xl mx-auto py-12">
+        <div className="glass-panel p-10 sm:p-14 text-center rounded-3xl border border-[rgba(120,90,70,0.15)] shadow-xl space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FFD9A0] to-[#E8703A] text-white flex items-center justify-center mx-auto shadow-md">
+            <UploadCloud className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2 max-w-lg mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#C77F2E] bg-[#FBEEDD] px-3 py-1 rounded-full border border-[rgba(199,127,46,0.25)]">
+              Clean Workspace State
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-[#2B2320]">
+              Welcome to ANVAYA
+            </h2>
+            <p className="text-xs sm:text-sm text-[#6B5E56] leading-relaxed">
+              {activeDataset
+                ? `Dataset '${activeDataset.name}' is uploaded but has not been processed yet. Click below to map columns and start intelligence enrichment.`
+                : "You haven't uploaded a dataset yet. Upload your first distributor feed or catalog file to begin understanding, normalizing, and enriching your data."}
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <Button
+              onClick={() => onNavigate?.('datasets')}
+              size="lg"
+              className="btn-sunrise-primary gap-2 text-xs font-bold rounded-2xl px-6 py-5 shadow-lg"
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>{activeDataset ? 'Map Columns & Process' : 'Upload Dataset'}</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => onNavigate?.('help')}
+              className="border-[rgba(120,90,70,0.2)] bg-white/80 text-xs font-semibold text-[#2B2320] rounded-2xl px-6 py-5"
+            >
+              View System Guidelines
+            </Button>
+          </div>
+
+          <div className="pt-6 border-t border-[rgba(120,90,70,0.08)] grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto text-left">
+            <div className="glass-inset p-3.5 rounded-xl">
+              <p className="text-xs font-bold text-[#2B2320]">1. Bring Your File</p>
+              <p className="text-[11px] text-[#6B5E56] mt-0.5">Upload CSV, XLSX, JSON, or TSV with any arbitrary headers.</p>
+            </div>
+            <div className="glass-inset p-3.5 rounded-xl">
+              <p className="text-xs font-bold text-[#2B2320]">2. Dynamic Profiling</p>
+              <p className="text-[11px] text-[#6B5E56] mt-0.5">ANVAYA infers column roles without pre-mapping.</p>
+            </div>
+            <div className="glass-inset p-3.5 rounded-xl">
+              <p className="text-xs font-bold text-[#2B2320]">3. Zero Fabrication</p>
+              <p className="text-[11px] text-[#6B5E56] mt-0.5">Full audit provenance &amp; verifiable citations.</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
+  const categories = data?.categories_distribution || [];
+  const brands = data?.brands_distribution || [];
+  const radar = data?.validation_radar || { critical: 0, warning: 0, info: 0, duplicate_skus: 0, total_flagged: 0 };
+  const events = data?.recent_activity || [];
+
   return (
-    <div className="space-y-8" data-testid="dashboard-page">
-      {/* Dashboard Page Header */}
-      <PageHeader
-        title="ANVAYA Product Intelligence"
-        description="Autonomous data cleansing, attribute recovery, and catalog intelligence platform."
-        badge={
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>AI Telemetry Active</span>
+    <div data-testid="dashboard-page" className="space-y-6 pb-12 max-w-7xl mx-auto">
+      {/* 1. Header Banner */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-xl font-bold tracking-tight text-[#2B2320] sm:text-2xl">
+              Catalog Intelligence Mission Control
+            </h2>
+            <span className="rounded-full border border-[rgba(199,127,46,0.25)] bg-[#FBEEDD] px-2.5 py-0.5 text-[10px] font-bold text-[#C77F2E] flex items-center gap-1">
+              <FileSpreadsheet className="w-3 h-3 text-[#E8703A]" />
+              <span>{activeDataset?.name || 'Active Dataset'} • {kpis.total_products.toLocaleString()} SKUs</span>
+            </span>
           </div>
-        }
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onNavigate?.('products')}
-              className="gap-1.5 text-xs"
-            >
-              <Layers className="h-3.5 w-3.5" />
-              <span>View Catalog</span>
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => onNavigate?.('ingestion')}
-              className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-sm shadow-primary/20"
-            >
-              <UploadCloud className="h-3.5 w-3.5" />
-              <span>Ingest Raw Data</span>
-            </Button>
-          </div>
-        }
-      />
+          <p className="text-xs text-[#6B5E56] mt-0.5">
+            Real-time catalog health, completeness benchmarks, and validation telemetry calculated strictly from your active dataset.
+          </p>
+        </div>
 
-      {/* KPI Stat Cards Row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Ingested Products"
-          value={qualityMetrics?.totalProductsAudited.toLocaleString() || '1,420'}
-          icon={Database}
-          change={{ value: '+18%', direction: 'up', label: 'vs last import' }}
-        />
-        <StatCard
-          title="Catalog Quality Score"
-          value={qualityMetrics ? `${qualityMetrics.overallQualityScore}/100` : '88.4/100'}
-          icon={ShieldCheck}
-          change={{ value: '+13.9 pts', direction: 'up', label: 'post-enrichment' }}
-        />
-        <StatCard
-          title="AI Enrichment Rate"
-          value="90.7%"
-          icon={Zap}
-          change={{ value: '1,288 SKUs', direction: 'up', label: 'recovered' }}
-        />
-        <StatCard
-          title="Duplicate Clusters"
-          value={`${duplicateClusters.length} Clusters`}
-          icon={Copy}
-          change={{ value: '₹63.5k/mo', direction: 'neutral', label: 'est. savings' }}
-        />
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onNavigate?.('datasets')}
+            className="text-xs font-semibold border-[rgba(120,90,70,0.2)] bg-white/80 text-[#2B2320] rounded-xl hover:bg-white"
+          >
+            Manage Datasets
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => onNavigate?.('enrichment')}
+            className="btn-sunrise-primary gap-1 text-xs font-bold rounded-xl px-4 py-2 shadow-md"
+          >
+            <Zap className="h-3.5 w-3.5" />
+            <span>Run Pipeline</span>
+          </Button>
+        </div>
       </div>
-      {/* AI Executive Insight */}
-      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-5 shadow-lg">
-        <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+      {/* 2. Top KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Card 1: Total SKUs */}
+        <div className="glass-panel p-5 rounded-2xl space-y-2 border border-[rgba(120,90,70,0.12)]">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A7E76]">Total Catalog Records</span>
+            <div className="p-2 rounded-xl bg-[#FBEEDD] text-[#E8703A]">
+              <Package className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-[#2B2320]">{kpis.total_products.toLocaleString()}</span>
+            <span className="text-xs font-bold text-[#C77F2E]">100% Sourced</span>
+          </div>
+          <p className="text-[11px] text-[#6B5E56]">Active catalog records</p>
+        </div>
 
-            <div className="flex gap-4">
-              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 border border-primary/20">
-                <Brain className="h-5 w-5 text-primary" />
-              </div>
+        {/* Card 2: Quality Score */}
+        <div className="glass-panel p-5 rounded-2xl space-y-2 border border-[rgba(120,90,70,0.12)]">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A7E76]">Quality Completeness</span>
+            <div className="p-2 rounded-xl bg-[#FBEEDD] text-[#C77F2E]">
+              <Sparkles className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-[#2B2320]">{kpis.avg_completeness_score}%</span>
+            <span className="text-xs font-bold text-[#C77F2E]">Benchmark</span>
+          </div>
+          <p className="text-[11px] text-[#6B5E56]">Average filled attributes</p>
+        </div>
 
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-foreground">
-                    AI Executive Insight
-                  </h3>
+        {/* Card 3: Review Queue */}
+        <div className="glass-panel p-5 rounded-2xl space-y-2 border border-[rgba(120,90,70,0.12)]">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A7E76]">Needs Human Review</span>
+            <div className="p-2 rounded-xl bg-[#FDEADE] text-[#C2571F]">
+              <Inbox className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-[#C2571F]">{kpis.review_queue_count}</span>
+            <span className="text-xs font-bold text-[#C2571F]">Escalated</span>
+          </div>
+          <p className="text-[11px] text-[#6B5E56]">Low confidence or LOV anomalies</p>
+        </div>
 
-                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-400">
-                    LIVE ANALYSIS
-                  </span>
+        {/* Card 4: Validation Rate */}
+        <div className="glass-panel p-5 rounded-2xl space-y-2 border border-[rgba(120,90,70,0.12)]">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A7E76]">Validation Pass Rate</span>
+            <div className="p-2 rounded-xl bg-[#FBEEDD] text-[#C77F2E]">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-[#2B2320]">
+              {Math.round((kpis.passed_validation_count / (kpis.total_products || 1)) * 100)}%
+            </span>
+            <span className="text-xs font-bold text-[#C77F2E]">Verified</span>
+          </div>
+          <p className="text-[11px] text-[#6B5E56]">{kpis.passed_validation_count} / {kpis.total_products} passed 9 rules</p>
+        </div>
+      </div>
+
+      {/* 3. Category & Brand Distributions */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Category Share */}
+        <div className="glass-panel p-6 rounded-2xl space-y-4 border border-[rgba(120,90,70,0.12)]">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-[#2B2320]">Taxonomy Category Breakdown</h3>
+            <span className="text-xs font-mono text-[#8A7E76]">{categories.length} Categories</span>
+          </div>
+
+          <div className="space-y-3">
+            {categories.map((cat: any, i: number) => (
+              <div key={i} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-[#2B2320] truncate max-w-xs">{cat.name}</span>
+                  <span className="font-mono text-[#6B5E56]">{cat.count} SKUs ({cat.share}%)</span>
                 </div>
-
-                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                  ANVAYA has analyzed your latest catalog telemetry and identified
-                  the areas most likely to improve your catalog health.
-                </p>
+                <div className="w-full bg-[rgba(120,90,70,0.1)] rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#FFD9A0] to-[#E8703A] rounded-full"
+                    style={{ width: `${cat.share}%` }}
+                  />
+                </div>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            <Button
-              size="sm"
-              onClick={() => onNavigate?.('quality')}
-              className="gap-1.5 shrink-0"
-            >
-              Review Insights
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
+        {/* Brand Share */}
+        <div className="glass-panel p-6 rounded-2xl space-y-4 border border-[rgba(120,90,70,0.12)]">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-[#2B2320]">Top Resolved Brands</h3>
+            <span className="text-xs font-mono text-[#8A7E76]">{brands.length} Brands</span>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-
-            <div className="rounded-xl border border-border/50 bg-background/40 p-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Catalog Health
-                </span>
+          <div className="space-y-3">
+            {brands.map((b: any, i: number) => (
+              <div key={i} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-[#2B2320]">{b.name}</span>
+                  <span className="font-mono text-[#6B5E56]">{b.count} SKUs ({b.share}%)</span>
+                </div>
+                <div className="w-full bg-[rgba(120,90,70,0.1)] rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#FF9E7D] to-[#F2A65A] rounded-full"
+                    style={{ width: `${b.share}%` }}
+                  />
+                </div>
               </div>
-
-              <p className="mt-2 text-sm font-semibold">
-                {qualityMetrics?.overallQualityScore ?? 88.4}/100
-              </p>
-
-              <p className="mt-1 text-[10px] text-emerald-400">
-                Healthy trajectory
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/50 bg-background/40 p-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Biggest Opportunity
-                </span>
-              </div>
-
-              <p className="mt-2 text-sm font-semibold">
-                Recover missing attributes
-              </p>
-
-              <p className="mt-1 text-[10px] text-muted-foreground">
-                {mockMissingAttributeAnomalies.length} areas need attention
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/50 bg-background/40 p-3">
-              <div className="flex items-center gap-2">
-                <Copy className="h-4 w-4 text-amber-400" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Next Recommended Step
-                </span>
-              </div>
-
-              <p className="mt-2 text-sm font-semibold">
-                Review duplicate clusters
-              </p>
-
-              <p className="mt-1 text-[10px] text-muted-foreground">
-                {duplicateClusters.length} clusters detected
-              </p>
-            </div>
-
+            ))}
           </div>
         </div>
       </div>
-      {/* Priority Actions */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-foreground">
-              What needs your attention
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              AI-prioritized actions based on your catalog telemetry
-            </p>
-          </div>
 
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {3} priorities
-          </span>
+      {/* 4. Validation Radar & Recent Activity */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Validation Radar */}
+        <div className="glass-panel p-6 rounded-2xl space-y-4 border border-[rgba(120,90,70,0.12)]">
+          <h3 className="text-sm font-bold text-[#2B2320]">Validation Anomaly Radar</h3>
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="glass-inset p-3 rounded-xl">
+              <span className="text-[10px] font-bold text-[#8A7E76] uppercase">Critical Failures</span>
+              <p className="text-lg font-black text-[#2B2320] mt-0.5">{radar.critical}</p>
+            </div>
+            <div className="glass-inset p-3 rounded-xl">
+              <span className="text-[10px] font-bold text-[#C2571F] uppercase">Warnings</span>
+              <p className="text-lg font-black text-[#C2571F] mt-0.5">{radar.warning}</p>
+            </div>
+            <div className="glass-inset p-3 rounded-xl">
+              <span className="text-[10px] font-bold text-[#8A7E76] uppercase">Duplicate SKUs</span>
+              <p className="text-lg font-black text-[#2B2320] mt-0.5">{radar.duplicate_skus}</p>
+            </div>
+            <div className="glass-inset p-3 rounded-xl">
+              <span className="text-[10px] font-bold text-[#C77F2E] uppercase">Total Flagged</span>
+              <p className="text-lg font-black text-[#C77F2E] mt-0.5">{radar.total_flagged}</p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-3">
-
-          {/* Priority 1 */}
-          <div className="group rounded-xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-red-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">
-                  High Priority
-                </span>
-              </div>
-
-              <span className="text-[10px] text-muted-foreground">
-                Quality impact
-              </span>
-            </div>
-
-            <h4 className="mt-3 text-sm font-semibold">
-              Recover missing attributes
-            </h4>
-
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Important product information is missing across several catalog areas.
-            </p>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onNavigate?.('quality')}
-              className="mt-3 h-7 px-0 text-xs text-primary hover:bg-transparent"
-            >
-              Review attributes →
-            </Button>
+        {/* Recent Activity */}
+        <div className="glass-panel p-6 rounded-2xl space-y-4 lg:col-span-2 border border-[rgba(120,90,70,0.12)]">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-[#2B2320]">Dataset Audit Activity Log</h3>
+            <span className="text-xs font-mono text-[#8A7E76]">Live Event Stream</span>
           </div>
 
-          {/* Priority 2 */}
-          <div className="group rounded-xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                  Medium Priority
-                </span>
-              </div>
-
-              <span className="text-[10px] text-muted-foreground">
-                Data hygiene
-              </span>
-            </div>
-
-            <h4 className="mt-3 text-sm font-semibold">
-              Review duplicate clusters
-            </h4>
-
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              {duplicateClusters.length} semantic clusters may contain overlapping products.
-            </p>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onNavigate?.('intelligence')}
-              className="mt-3 h-7 px-0 text-xs text-primary hover:bg-transparent"
-            >
-              Review duplicates →
-            </Button>
+          <div className="space-y-2.5">
+            {events.length === 0 ? (
+              <p className="text-xs text-[#8A7E76] italic">No audit events recorded yet for this dataset.</p>
+            ) : (
+              events.map((ev: any) => (
+                <div key={ev.id} className="glass-inset p-3 rounded-xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className="rounded bg-[#FBEEDD] px-2 py-0.5 text-[9px] font-mono font-bold text-[#C77F2E]">
+                      {ev.event_type}
+                    </span>
+                    <span className="font-semibold text-[#2B2320]">{ev.description}</span>
+                  </div>
+                  <span className="text-[10px] text-[#8A7E76] font-mono shrink-0 ml-2">{ev.timestamp}</span>
+                </div>
+              ))
+            )}
           </div>
-
-          {/* Priority 3 */}
-          <div className="group rounded-xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-blue-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">
-                  Optimization
-                </span>
-              </div>
-
-              <span className="text-[10px] text-muted-foreground">
-                AI enrichment
-              </span>
-            </div>
-
-            <h4 className="mt-3 text-sm font-semibold">
-              Validate enrichment results
-            </h4>
-
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Review lower-confidence AI recoveries before finalizing your catalog.
-            </p>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onNavigate?.('quality')}
-              className="mt-3 h-7 px-0 text-xs text-primary hover:bg-transparent"
-            >
-              Review enrichment →
-            </Button>
-          </div>
-
         </div>
       </div>
-
-      {/* Main Two-Column Grid: Quality Score & Enrichment Progress */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {qualityMetrics && (
-          <QualityMetricsCard
-            metrics={qualityMetrics}
-            onViewAnomalies={() => onNavigate?.('quality')}
-          />
-        )}
-        <EnrichmentPipelineCard
-          activeJobStatus={activeJobStatus}
-          recentProducts={recentProducts}
-          onBatchEnrich={handleBatchEnrich}
-          onExploreCatalog={() => onNavigate?.('products')}
-        />
-      </div>
-
-      {/* Secondary Two-Column Grid: Missing Attributes & Duplicate Clusters */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <MissingAttributesCard
-          missingAttributes={mockMissingAttributeAnomalies}
-          onRecoverMissing={handleBatchEnrich}
-        />
-        <DuplicateClustersCard
-          duplicateClusters={duplicateClusters}
-          onViewDuplicates={() => onNavigate?.('intelligence')}
-          onMergeCluster={handleMergeCluster}
-        />
-      </div>
-
-      {/* Category Intelligence & Benchmarking */}
-      {categoryInsights.length > 0 && (
-        <CategoryInsightsCard
-          categories={categoryInsights}
-          onCategorySelect={(slug) => console.log('Selected category:', slug)}
-        />
-      )}
-
-      {/* High-Impact Ingestion CTA Banner */}
-      <IngestionCTABanner
-        onStartIngestion={() => onNavigate?.('ingestion')}
-        onExploreCatalog={() => onNavigate?.('products')}
-      />
-
-      <AICopilot
-        qualityScore={qualityMetrics?.overallQualityScore}
-        totalProducts={qualityMetrics?.totalProductsAudited}
-        enrichmentRate={90.7}
-        duplicateClusters={duplicateClusters.length}
-        missingAttributes={mockMissingAttributeAnomalies.length}
-        products={recentProducts}
-      />
     </div>
-
   );
 }

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { DatasetProvider } from '@/context/DatasetContext';
 import { apiConfig, setUseMocks } from '@/services/api/apiConfig';
 
 describe('DashboardPage Component', () => {
@@ -11,89 +13,52 @@ describe('DashboardPage Component', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders loading skeleton initially and resolves telemetry data', async () => {
-    render(<DashboardPage />);
+  it('renders clean workspace empty state when no dataset is uploaded or active', async () => {
+    render(
+      <DatasetProvider>
+        <DashboardPage />
+      </DatasetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('dashboard-page')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('ANVAYA Product Intelligence')).toBeInTheDocument();
-    expect(screen.getByText('Total Ingested Products')).toBeInTheDocument();
-    expect(screen.getByText('Catalog Quality Score')).toBeInTheDocument();
+    expect(screen.getByText('Welcome to ANVAYA')).toBeInTheDocument();
+    expect(screen.getByText('Clean Workspace State')).toBeInTheDocument();
+    expect(screen.getByText(/You haven't uploaded a dataset yet/i)).toBeInTheDocument();
   });
 
-  it('renders Quality Health Index and 4 dimension scores', async () => {
-    render(<DashboardPage />);
+  it('renders dataset onboarding value propositions', async () => {
+    render(
+      <DatasetProvider>
+        <DashboardPage />
+      </DatasetProvider>
+    );
 
     await waitFor(() => {
-      expect(screen.getByText('Catalog Quality Health Index')).toBeInTheDocument();
+      expect(screen.getByText('1. Bring Your File')).toBeInTheDocument();
     });
 
-    expect(screen.getAllByText('Completeness').length).toBeGreaterThan(0);
-    expect(screen.getByText('Consistency')).toBeInTheDocument();
-    expect(screen.getByText('Accuracy')).toBeInTheDocument();
-    expect(screen.getByText('Uniqueness')).toBeInTheDocument();
-    expect(screen.getByText('7-Day Quality Score Trajectory')).toBeInTheDocument();
+    expect(screen.getByText('2. Dynamic Profiling')).toBeInTheDocument();
+    expect(screen.getByText('3. Zero Fabrication')).toBeInTheDocument();
   });
 
-  it('renders active AI Enrichment pipeline job and recently recovered attributes with explainability', async () => {
-    render(<DashboardPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/AI Enrichment Pipeline/i)).toBeInTheDocument();
-    });
-
-    expect(screen.getByText(/Active Pipeline Job:/i)).toBeInTheDocument();
-    expect(screen.getByText(/Recently Recovered Attributes & Explainability/i)).toBeInTheDocument();
-    expect(screen.getByText(/Safe structured explainability metadata active/i)).toBeInTheDocument();
-  });
-
-  it('renders missing attribute recovery gaps and duplicate clusters', async () => {
-    render(<DashboardPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Missing Attribute Recovery Gaps')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText('fabric')).toBeInTheDocument();
-    expect(screen.getByText('Semantic Duplicate Clusters')).toBeInTheDocument();
-    expect(screen.getByText(/boAt Airdopes 141 True Wireless Earbuds/i)).toBeInTheDocument();
-    expect(screen.getByText(/Est\. Savings: ₹63\.5k\/mo/i)).toBeInTheDocument();
-  });
-
-  it('renders Category Intelligence benchmarking and allows tab interaction', async () => {
-    render(<DashboardPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Category Intelligence & Benchmarking/i)).toBeInTheDocument();
-    });
-
-    expect(screen.getByRole('tab', { name: 'Electronics & Mobiles' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Audio & Wearables' })).toBeInTheDocument();
-
-    const audioTab = screen.getByRole('tab', { name: 'Audio & Wearables' });
-    fireEvent.click(audioTab);
-
-    expect(screen.getByText('boAt')).toBeInTheDocument();
-  });
-
-  it('renders Ingestion CTA Banner and triggers navigation callbacks', async () => {
+  it('triggers navigation callbacks for dataset upload', async () => {
     const onNavigate = vi.fn();
-    render(<DashboardPage onNavigate={onNavigate} />);
+    render(
+      <DatasetProvider>
+        <DashboardPage onNavigate={onNavigate} />
+      </DatasetProvider>
+    );
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/Ingest Unstructured Catalogs & Automate AI Enrichment/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText('Welcome to ANVAYA')).toBeInTheDocument();
     });
 
-    const launchBtn = screen.getByRole('button', { name: /Launch Ingestion Studio/i });
-    fireEvent.click(launchBtn);
-    expect(onNavigate).toHaveBeenCalledWith('ingestion');
+    const uploadBtn = screen.getByRole('button', { name: /Upload Dataset/i });
+    fireEvent.click(uploadBtn);
 
-    const exploreBtn = screen.getByRole('button', { name: /Explore Catalog/i });
-    fireEvent.click(exploreBtn);
-    expect(onNavigate).toHaveBeenCalledWith('products');
+    expect(onNavigate).toHaveBeenCalledWith('datasets');
   });
 });

@@ -3,12 +3,17 @@ import { Sidebar, NavigationSection } from './Sidebar';
 import { TopNav } from './TopNav';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/utils/cn';
 
 export interface MainLayoutProps {
   children: React.ReactNode;
   activeSection?: NavigationSection;
   onSectionChange?: (section: NavigationSection) => void;
+  reviewCount?: number;
+  onReplayTour?: () => void;
+  onStartTour?: () => void;
+  userRole?: string;
+  userName?: string;
+  userEmail?: string;
   className?: string;
 }
 
@@ -16,10 +21,15 @@ export function MainLayout({
   children,
   activeSection = 'overview',
   onSectionChange,
-  className,
+  reviewCount = 0,
+  onReplayTour,
+  onStartTour,
+  userRole = 'ADMIN',
+  userName = 'Devin Vance',
+  userEmail = 'lead.architect@enterprise.com',
+  className = '',
 }: MainLayoutProps) {
   const [currentSection, setCurrentSection] = useState<NavigationSection>(activeSection);
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleSectionChange = (section: NavigationSection) => {
@@ -31,39 +41,40 @@ export function MainLayout({
   };
 
   const active = onSectionChange ? activeSection : currentSection;
+  const tourTrigger = onStartTour || onReplayTour;
 
   return (
-    <div className={cn('min-h-screen bg-background text-foreground flex flex-col', className)}>
-      {/* Desktop & Tablet Sidebar */}
-      <div className="flex flex-1 min-h-screen overflow-hidden">
+    <div className={`relative min-h-screen bg-[#FFFBF7] bg-sunrise-canvas text-[#2B2320] flex flex-col ${className}`}>
+      <div className="relative z-10 flex flex-1 min-h-screen overflow-hidden">
+        {/* Desktop Fixed Sidebar */}
         <div className="hidden lg:flex flex-shrink-0">
           <Sidebar
             activeSection={active}
             onSectionChange={handleSectionChange}
-            collapsed={collapsed}
-            onToggleCollapse={() => setCollapsed(!collapsed)}
+            reviewCount={reviewCount}
+            onReplayTour={tourTrigger}
+            userRole={userRole}
+            collapsed={false}
           />
         </div>
 
-        {/* Mobile Drawer Overlay */}
+        {/* Mobile Sidebar Overlay */}
         {mobileOpen && (
           <div
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm lg:hidden animate-in fade-in-0 duration-200"
+            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm lg:hidden animate-in fade-in-0 duration-200"
             onClick={() => setMobileOpen(false)}
-            aria-hidden="true"
           >
             <div
-              className="fixed inset-y-0 left-0 z-50 w-72 bg-card shadow-xl flex flex-col border-r border-border animate-in slide-in-from-left duration-200"
+              className="fixed inset-y-0 left-0 z-50 w-72 bg-[rgba(255,251,247,0.95)] backdrop-blur-xl shadow-2xl flex flex-col border-r border-[rgba(120,90,70,0.15)] animate-in slide-in-from-left duration-200"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <span className="font-bold text-sm text-foreground">Navigation</span>
+              <div className="flex items-center justify-between p-4 border-b border-[rgba(120,90,70,0.12)]">
+                <span className="font-bold text-sm text-[#2B2320]">ANVAYA Navigation</span>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setMobileOpen(false)}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  aria-label="Close navigation menu"
+                  className="h-8 w-8 text-[#6B5E56] hover:text-[#2B2320]"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -72,8 +83,10 @@ export function MainLayout({
                 <Sidebar
                   activeSection={active}
                   onSectionChange={handleSectionChange}
+                  reviewCount={reviewCount}
+                  onReplayTour={tourTrigger}
+                  userRole={userRole}
                   collapsed={false}
-                  onToggleCollapse={() => { }}
                   className="border-none w-full bg-transparent"
                 />
               </div>
@@ -81,14 +94,19 @@ export function MainLayout({
           </div>
         )}
 
-        {/* Main Content Area */}
+        {/* Main Content Viewport */}
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           <TopNav
             activeSection={active}
             onOpenMobileMenu={() => setMobileOpen(true)}
             onNavigate={handleSectionChange}
+            onStartTour={tourTrigger}
+            onReplayTour={tourTrigger}
+            userRole={userRole}
+            userName={userName}
+            userEmail={userEmail}
           />
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          <main className="flex-1 p-5 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto">
             {children}
           </main>
         </div>

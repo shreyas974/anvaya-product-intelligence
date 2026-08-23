@@ -1,6 +1,6 @@
 /**
  * ANVAYA Frontend API Configuration
- * Supports environment variables with resilient defaults for standalone & mock development.
+ * Defaults to connecting to the live FastAPI backend.
  */
 
 const getEnvVar = (key: string, defaultValue: string): string => {
@@ -10,11 +10,11 @@ const getEnvVar = (key: string, defaultValue: string): string => {
   return defaultValue;
 };
 
-export const API_BASE_URL = getEnvVar('VITE_API_BASE_URL', 'http://localhost:8000/api');
+export const API_BASE_URL = getEnvVar('VITE_API_BASE_URL', 'http://127.0.0.1:8000/api/v1');
 
 export const getUseMocksDefault = (): boolean => {
-  const envVal = getEnvVar('VITE_USE_MOCKS', 'true');
-  return envVal === 'true' || envVal === '1' || envVal === '';
+  const envVal = getEnvVar('VITE_USE_MOCKS', 'false');
+  return envVal === 'true' || envVal === '1';
 };
 
 export interface ApiConfig {
@@ -28,9 +28,9 @@ export interface ApiConfig {
 export const apiConfig: ApiConfig = {
   baseUrl: API_BASE_URL,
   useMocks: getUseMocksDefault(),
-  timeoutMs: 8000,
-  simulatedLatencyMinMs: 150,
-  simulatedLatencyMaxMs: 300,
+  timeoutMs: 10000,
+  simulatedLatencyMinMs: 0,
+  simulatedLatencyMaxMs: 0,
 };
 
 /**
@@ -61,9 +61,6 @@ export function setApiBaseUrl(url: string): void {
   apiConfig.baseUrl = url;
 }
 
-/**
- * Helper to simulate realistic latency (150-300ms) for loading state UX testing.
- */
 export async function simulateLatency(minMs = apiConfig.simulatedLatencyMinMs, maxMs = apiConfig.simulatedLatencyMaxMs): Promise<void> {
   if (minMs <= 0 && maxMs <= 0) return;
   const delay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;

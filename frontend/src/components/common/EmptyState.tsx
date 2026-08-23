@@ -1,39 +1,38 @@
-import * as React from 'react';
-import { LucideIcon, Inbox } from 'lucide-react';
-import { cn } from '@/utils/cn';
+import { LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export interface EmptyStateProps {
-  icon?: LucideIcon;
+  icon: LucideIcon;
   title: string;
-  description?: string;
-  action?: React.ReactNode;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
   className?: string;
 }
 
 export function EmptyState({
-  icon: Icon = Inbox,
+  icon: Icon,
   title,
   description,
-  action,
-  className,
+  actionLabel,
+  onAction,
+  className = '',
 }: EmptyStateProps) {
   return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center rounded-lg border border-dashed border-border/80 p-8 text-center sm:p-12',
-        className
-      )}
-    >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary/80 text-muted-foreground ring-8 ring-secondary/20">
-        <Icon className="h-6 w-6" aria-hidden="true" />
+    <div className={`glass-panel p-10 text-center rounded-2xl flex flex-col items-center justify-center space-y-3 ${className}`}>
+      <div className="w-12 h-12 rounded-2xl bg-[#FBEEDD] text-[#E8703A] flex items-center justify-center border border-[rgba(199,127,46,0.25)] shadow-sm">
+        <Icon className="w-6 h-6" />
       </div>
-      <h3 className="mt-4 text-base font-semibold text-foreground">{title}</h3>
-      {description && (
-        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
-          {description}
-        </p>
+      <h3 className="text-base font-bold text-[#2B2320]">{title}</h3>
+      <p className="text-xs text-[#6B5E56] max-w-sm">{description}</p>
+      {actionLabel && onAction && (
+        <Button
+          onClick={onAction}
+          className="btn-sunrise-primary text-xs font-bold rounded-xl px-4 py-2 mt-2"
+        >
+          {actionLabel}
+        </Button>
       )}
-      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 }

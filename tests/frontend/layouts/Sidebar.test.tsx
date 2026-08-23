@@ -3,21 +3,30 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Sidebar } from '@/layouts/Sidebar';
 
 describe('Sidebar Component', () => {
-  it('renders all 5 core navigation items', () => {
+  it('renders core enterprise navigation items', () => {
     render(
       <Sidebar
         activeSection="overview"
         onSectionChange={() => {}}
         collapsed={false}
-        onToggleCollapse={() => {}}
+        reviewCount={5}
       />
     );
 
-    expect(screen.getByText('Overview')).toBeInTheDocument();
-    expect(screen.getByText('Ingestion')).toBeInTheDocument();
+    expect(screen.getByText('Mission Control')).toBeInTheDocument();
     expect(screen.getByText('Products')).toBeInTheDocument();
-    expect(screen.getByText('Quality')).toBeInTheDocument();
+    expect(screen.getByText('Fittings Lab')).toBeInTheDocument();
+    expect(screen.getByText('Benchmark Eval')).toBeInTheDocument();
+    expect(screen.getByText('Conflict Center')).toBeInTheDocument();
+    expect(screen.getByText('Review Queue')).toBeInTheDocument();
+    expect(screen.getByText('Enrichment')).toBeInTheDocument();
+    expect(screen.getByText('Validation')).toBeInTheDocument();
     expect(screen.getByText('Intelligence')).toBeInTheDocument();
+    expect(screen.getByText('Data Quality')).toBeInTheDocument();
+    expect(screen.getByText('AI Copilot')).toBeInTheDocument();
+    expect(screen.getByText('Analytics')).toBeInTheDocument();
+    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('triggers onSectionChange callback when a navigation item is clicked', () => {
@@ -27,25 +36,23 @@ describe('Sidebar Component', () => {
         activeSection="overview"
         onSectionChange={handleSectionChange}
         collapsed={false}
-        onToggleCollapse={() => {}}
       />
     );
 
-    fireEvent.click(screen.getByText('Products'));
-    expect(handleSectionChange).toHaveBeenCalledWith('products');
+    fireEvent.click(screen.getByText('Fittings Lab'));
+    expect(handleSectionChange).toHaveBeenCalledWith('fittings');
   });
 
   it('highlights the active navigation item', () => {
     render(
       <Sidebar
-        activeSection="quality"
+        activeSection="fittings"
         onSectionChange={() => {}}
         collapsed={false}
-        onToggleCollapse={() => {}}
       />
     );
 
-    const qualityButton = screen.getByRole('button', { name: /quality/i });
-    expect(qualityButton).toHaveAttribute('aria-current', 'page');
+    const fittingsButton = screen.getByRole('button', { name: /fittings lab/i });
+    expect(fittingsButton).toHaveAttribute('aria-current', 'page');
   });
 });

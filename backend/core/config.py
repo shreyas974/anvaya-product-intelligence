@@ -7,19 +7,19 @@ class Settings(BaseSettings):
     app_env: str = "development"
     debug: bool = True
 
-    database_url: str
+    database_url: str = "sqlite:///./data/anvaya.db"
 
-    supabase_url: str
+    supabase_url: str = "https://placeholder.supabase.co"
     supabase_anon_key: str = ""
     supabase_service_role_key: str = ""
 
     ai_service_url: str = ""
     ai_service_timeout: float = 30.0
 
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173"
 
     model_config = SettingsConfigDict(
-        env_file="backend/.env",
+        env_file=["backend/.env", ".env"],
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",

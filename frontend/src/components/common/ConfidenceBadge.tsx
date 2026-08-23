@@ -31,19 +31,19 @@ const tierConfig: Record<
     label: 'High',
     icon: CheckCircle2,
     className:
-      'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-medium',
+      'border-[rgba(199,127,46,0.3)] bg-[#FBEEDD] text-[#C77F2E] font-medium',
   },
   medium: {
     label: 'Medium',
     icon: AlertTriangle,
     className:
-      'border-amber-500/30 bg-amber-500/10 text-amber-400 font-medium',
+      'border-[rgba(201,138,82,0.3)] bg-[#FBF2E6] text-[#C98A52] font-medium',
   },
   low: {
     label: 'Low',
     icon: AlertCircle,
     className:
-      'border-rose-500/30 bg-rose-500/10 text-rose-400 font-medium',
+      'border-[rgba(194,87,31,0.3)] bg-[#FDEADE] text-[#C2571F] font-medium',
   },
 };
 

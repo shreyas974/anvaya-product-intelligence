@@ -4,6 +4,7 @@ import jwt
 import pytest
 from fastapi import HTTPException
 
+from backend.core.config import settings
 from backend.auth.jwt import verify_supabase_token
 
 
@@ -18,11 +19,11 @@ def test_jwt_rejects_invalid_token():
 @patch("backend.auth.jwt.jwt.PyJWKClient")
 def test_jwt_verifies_supabase_token(mock_jwk_client):
     token = jwt.encode(
-       {
-    "sub": "user-123",
-    "exp": 4102444800,
-    "iss": "https://dwapsuoirrgntbdufkww.supabase.co/auth/v1",
-},
+        {
+            "sub": "user-123",
+            "exp": 4102444800,
+            "iss": f"{settings.supabase_url.rstrip('/')}/auth/v1",
+        },
         "test-secret",
         algorithm="HS256",
         headers={"kid": "test-key"},

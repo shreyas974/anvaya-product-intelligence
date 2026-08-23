@@ -1,587 +1,387 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Package,
-  RefreshCw,
   Search,
-  SlidersHorizontal,
-  ArrowUpRight,
-  Sparkles,
-  Tag,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Package,
+  UploadCloud,
 } from 'lucide-react';
-
-import { productsService } from '@/services/products.service';
-import type { Product, ProductStatus } from '@/types/product.types';
-import type { EnrichmentStatus } from '@/types/enrichment.types';
-
-import { PageHeader } from '@/components/common/PageHeader';
-import { EmptyState } from '@/components/common/EmptyState';
-import { SkeletonLoader } from '@/components/common/SkeletonLoader';
-import { StatCard } from '@/components/common/StatCard';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { ConfidenceBadge } from '@/components/common/ConfidenceBadge';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/common/StatusBadge';
+import { request } from '@/services/api/apiClient';
+import { useDataset } from '@/context/DatasetContext';
 
-type SortField =
-  | 'title'
-  | 'brand'
-  | 'category'
-  | 'qualityScore'
-  | 'confidenceScore';
-
-type SortDirection = 'asc' | 'desc';
-
-interface ProductsPageProps {
-  onProductSelect: (productId: string) => void;
+export interface ProductsPageProps {
+  onSelectProduct?: (productId: string) => void;
+  onProductSelect?: (productId: string) => void;
+  onNavigate?: (section: string) => void;
 }
 
-export function ProductsPage({
-  onProductSelect,
-}: ProductsPageProps) {
-  const [products, setProducts] = useState<Product[]>([]);
+export function ProductsPage({ onSelectProduct, onProductSelect, onNavigate }: ProductsPageProps) {
+  const handleSelect = onSelectProduct || onProductSelect || (() => {});
+  const { activeDataset, activeDatasetId } = useDataset();
+
+  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState<any[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Filters
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const [brand, setBrand] = useState('');
-  const [enrichmentStatus, setEnrichmentStatus] =
-    useState<EnrichmentStatus | ''>('');
-  const [status, setStatus] = useState<ProductStatus | ''>('');
-  const [minQuality, setMinQuality] = useState('');
-  const [sortField, setSortField] = useState<SortField>('title');
-  const [sortDirection, setSortDirection] =
-    useState<SortDirection>('asc');
+  const [selectedBrand, setSelectedBrand] = useState('ALL');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [minCompleteness, setMinCompleteness] = useState<number | undefined>(undefined);
+  const [sortBy, setSortBy] = useState('id');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  async function fetchProducts() {
+    if (!activeDatasetId) {
+      setItems([]);
+      setTotalItems(0);
+      setTotalPages(1);
+      return;
+    }
 
-  const loadProducts = async () => {
     try {
       setLoading(true);
-      setError(null);
+      const params: Record<string, any> = {
+        dataset_id: activeDatasetId,
+        page,
+        page_size: pageSize,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      };
 
-      const response = await productsService.fetchProducts({
-        page: 1,
-        limit: 100,
-      });
+      if (search.trim()) params.search = search.trim();
+      if (selectedBrand !== 'ALL') params.brand = selectedBrand;
+      if (selectedCategory !== 'ALL') params.category = selectedCategory;
+      if (selectedStatus !== 'ALL') params.validation_status = selectedStatus;
+      if (minCompleteness !== undefined) params.min_completeness = minCompleteness;
 
-      setProducts(response.data);
-    } catch (err) {
-      console.error('Failed to load products:', err);
-      setError('Unable to load products. Please try again.');
+      const res = await request<any>('/products', { params });
+      if (res?.data) {
+        setItems(res.data.items || []);
+        setTotalItems(res.data.pagination.total_items || 0);
+        setTotalPages(res.data.pagination.total_pages || 1);
+      }
+    } catch (e) {
+      console.error('Failed to fetch products:', e);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
-    void loadProducts();
-  }, []);
+    fetchProducts();
+  }, [activeDatasetId, page, pageSize, selectedBrand, selectedCategory, selectedStatus, minCompleteness, sortBy, sortOrder]);
 
-  const categories = useMemo(
-    () =>
-      Array.from(new Set(products.map((product) => product.category))).sort(),
-    [products]
-  );
-
-  const brands = useMemo(
-    () =>
-      Array.from(new Set(products.map((product) => product.brand))).sort(),
-    [products]
-  );
-
-  const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    const filtered = products.filter((product) => {
-      const matchesSearch =
-        !query ||
-        [product.title, product.sku, product.brand, product.category].some(
-          (value) => value.toLowerCase().includes(query)
-        );
-
-      const matchesCategory =
-        !category || product.category === category;
-
-      const matchesBrand =
-        !brand || product.brand === brand;
-
-      const matchesEnrichment =
-        !enrichmentStatus ||
-        product.enrichmentStatus === enrichmentStatus;
-
-      const matchesStatus =
-        !status || product.status === status;
-
-      const matchesQuality =
-        !minQuality ||
-        product.qualityScore >= Number(minQuality);
-
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesBrand &&
-        matchesEnrichment &&
-        matchesStatus &&
-        matchesQuality
-      );
-    });
-
-    return filtered.sort((a, b) => {
-      let comparison = 0;
-
-      if (
-        sortField === 'qualityScore' ||
-        sortField === 'confidenceScore'
-      ) {
-        comparison =
-          Number(a[sortField]) - Number(b[sortField]);
-      } else {
-        comparison = String(a[sortField]).localeCompare(
-          String(b[sortField])
-        );
-      }
-
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-  }, [
-    products,
-    search,
-    category,
-    brand,
-    enrichmentStatus,
-    status,
-    minQuality,
-    sortField,
-    sortDirection,
-  ]);
-
-  const stats = useMemo(() => {
-    const enriched = products.filter(
-      (product) => product.enrichmentStatus === 'enriched'
-    ).length;
-
-    const needsReview = products.filter(
-      (product) => product.enrichmentStatus === 'needs_review'
-    ).length;
-
-    const averageQuality =
-      products.length > 0
-        ? Math.round(
-          products.reduce(
-            (total, product) => total + product.qualityScore,
-            0
-          ) / products.length
-        )
-        : 0;
-
-    return {
-      total: products.length,
-      enriched,
-      needsReview,
-      averageQuality,
-    };
-  }, [products]);
-
-  const resetFilters = () => {
-    setSearch('');
-    setCategory('');
-    setBrand('');
-    setEnrichmentStatus('');
-    setStatus('');
-    setMinQuality('');
-    setSortField('title');
-    setSortDirection('asc');
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    fetchProducts();
   };
 
-  const hasActiveFilters =
-    search ||
-    category ||
-    brand ||
-    enrichmentStatus ||
-    status ||
-    minQuality;
+  // Extract unique brands and categories dynamically from loaded items
+  const uniqueBrands = ['ALL', ...Array.from(new Set(items.map((i) => i.canonical_brand).filter(Boolean)))];
+  const uniqueCategories = ['ALL', ...Array.from(new Set(items.map((i) => i.category).filter(Boolean)))];
+
+  if (!activeDatasetId) {
+    return (
+      <div className="glass-panel p-12 text-center rounded-3xl space-y-4 max-w-xl mx-auto my-12 border border-[rgba(120,90,70,0.15)]">
+        <Package className="mx-auto h-12 w-12 text-[#9C8F86] opacity-60" />
+        <h3 className="text-lg font-bold text-[#2B2320]">No Active Dataset Selected</h3>
+        <p className="text-xs text-[#6B5E56] leading-relaxed">
+          Product records are strictly scoped to the active dataset. Upload a dataset to inspect and query products.
+        </p>
+        <Button
+          onClick={() => onNavigate?.('datasets')}
+          className="btn-sunrise-primary gap-1.5 text-xs font-bold rounded-xl px-5 py-2.5 shadow-md"
+        >
+          <UploadCloud className="w-4 h-4" />
+          <span>Upload Dataset</span>
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Products"
-        description="Manage, inspect, and enrich your product catalog."
-        actions={
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#C77F2E] bg-[#FBEEDD] px-2.5 py-0.5 rounded-full border border-[rgba(199,127,46,0.2)]">
+              Product Explorer
+            </span>
+            <span className="text-xs text-[#8A7E76] font-mono">
+              {activeDataset ? activeDataset.name : 'Active Catalog'} • {totalItems.toLocaleString()} Products
+            </span>
+          </div>
+          <h1 className="text-2xl font-black text-[#2B2320] mt-1">Grounded Product Catalog</h1>
+          <p className="text-xs text-[#6B5E56]">
+            Filter, search, and inspect records from active dataset <strong>{activeDataset?.name}</strong> with full evidence traces and validation statuses.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void loadProducts()}
-            disabled={loading}
+            onClick={() => {
+              setSearch('');
+              setSelectedBrand('ALL');
+              setSelectedCategory('ALL');
+              setSelectedStatus('ALL');
+              setMinCompleteness(undefined);
+              setPage(1);
+            }}
+            className="text-xs font-semibold border-[rgba(120,90,70,0.2)] bg-white/80 text-[#2B2320] hover:bg-white rounded-xl"
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            Reset All Filters
           </Button>
-        }
-      />
-
-      {loading ? (
-        <div className="space-y-4">
-          <SkeletonLoader />
-          <SkeletonLoader />
-          <SkeletonLoader />
         </div>
-      ) : error ? (
-        <EmptyState
-          icon={Package}
-          title="Unable to load products"
-          description={error}
-          action={
-            <Button onClick={() => void loadProducts()}>
-              Try Again
-            </Button>
-          }
-        />
-      ) : (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Products"
-              value={stats.total}
-              icon={Package}
-            />
+      </div>
 
-            <StatCard
-              title="Enriched"
-              value={stats.enriched}
-              icon={Package}
-            />
-
-            <StatCard
-              title="Needs Review"
-              value={stats.needsReview}
-              icon={Package}
-            />
-
-            <StatCard
-              title="Avg. Quality"
-              value={`${stats.averageQuality}%`}
-              icon={Package}
+      {/* Search & Filter Bar */}
+      <div className="glass-panel p-5 rounded-2xl space-y-4 border border-[rgba(120,90,70,0.12)]">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9C8F86]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by part number, title, description, brand, or extracted specifications..."
+              className="w-full rounded-xl border border-[rgba(120,90,70,0.15)] bg-white/90 py-2.5 pl-10 pr-4 text-xs text-[#2B2320] placeholder:text-[#9C8F86] outline-none focus:ring-2 focus:ring-[#E8703A]/20 transition-all"
             />
           </div>
+          <Button type="submit" size="sm" className="btn-sunrise-primary px-5 text-xs font-bold rounded-xl">
+            Search
+          </Button>
+        </form>
 
-          <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-              <h2 className="font-semibold">Search & Filters</h2>
-            </div>
-
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search products, SKU, brand or category..."
-                className="w-full rounded-md border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <select
-                value={category}
-                onChange={(event) => setCategory(event.target.value)}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="">All Categories</option>
-                {categories.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={brand}
-                onChange={(event) => setBrand(event.target.value)}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="">All Brands</option>
-                {brands.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={enrichmentStatus}
-                onChange={(event) =>
-                  setEnrichmentStatus(
-                    event.target.value as EnrichmentStatus | ''
-                  )
-                }
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="">All Enrichment</option>
-                <option value="pending">Pending</option>
-                <option value="in_progress">In Progress</option>
-                <option value="enriched">Enriched</option>
-                <option value="failed">Failed</option>
-                <option value="needs_review">Needs Review</option>
-              </select>
-
-              <select
-                value={status}
-                onChange={(event) =>
-                  setStatus(event.target.value as ProductStatus | '')
-                }
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="">All Statuses</option>
-                <option value="raw">Raw</option>
-                <option value="cleaned">Cleaned</option>
-                <option value="enriched">Enriched</option>
-                <option value="flagged">Flagged</option>
-                <option value="approved">Approved</option>
-              </select>
-
-              <select
-                value={minQuality}
-                onChange={(event) => setMinQuality(event.target.value)}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Any Quality</option>
-                <option value="90">90%+</option>
-                <option value="80">80%+</option>
-                <option value="70">70%+</option>
-                <option value="60">60%+</option>
-              </select>
-
-              <select
-                value={`${sortField}:${sortDirection}`}
-                onChange={(event) => {
-                  const [field, direction] =
-                    event.target.value.split(':') as [
-                      SortField,
-                      SortDirection
-                    ];
-
-                  setSortField(field);
-                  setSortDirection(direction);
-                }}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="title:asc">Name A–Z</option>
-                <option value="title:desc">Name Z–A</option>
-                <option value="brand:asc">Brand A–Z</option>
-                <option value="brand:desc">Brand Z–A</option>
-                <option value="qualityScore:desc">
-                  Quality: High → Low
-                </option>
-                <option value="qualityScore:asc">
-                  Quality: Low → High
-                </option>
-                <option value="confidenceScore:desc">
-                  Confidence: High → Low
-                </option>
-                <option value="confidenceScore:asc">
-                  Confidence: Low → High
-                </option>
-              </select>
-            </div>
-
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={resetFilters}
-              >
-                Reset Filters
-              </Button>
-            )}
+        {/* Filter Dropdowns */}
+        <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          {/* Brand Filter */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-[rgba(120,90,70,0.15)] bg-white/80 px-3 py-1.5">
+            <span className="text-[11px] font-semibold text-[#8A7E76]">Brand:</span>
+            <select
+              value={selectedBrand}
+              onChange={(e) => {
+                setSelectedBrand(e.target.value);
+                setPage(1);
+              }}
+              className="bg-transparent font-bold text-[#2B2320] outline-none cursor-pointer text-xs max-w-xs truncate"
+            >
+              {uniqueBrands.map((b: any) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
           </div>
 
-          {filteredProducts.length === 0 ? (
-            <EmptyState
-              icon={Package}
-              title="No products found"
-              description="Try changing your search or filter criteria."
-              action={
-                hasActiveFilters ? (
-                  <Button onClick={resetFilters}>
-                    Reset Filters
-                  </Button>
-                ) : undefined
-              }
-            />
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {filteredProducts.map((product) => (
-                <button
-                  key={product.id}
-                  type="button"
-                  onClick={() => onProductSelect(product.id)}
-                  className="
-        group relative overflow-hidden rounded-2xl
-        border border-border/70
-        bg-card text-left
-        shadow-sm
-        transition-all duration-300 ease-out
-        hover:-translate-y-1.5
-        hover:border-primary/40
-        hover:shadow-2xl hover:shadow-primary/10
-        focus:outline-none
-        focus:ring-2 focus:ring-primary/40
-      "
-                >
-                  {/* Top intelligence glow */}
-                  <div
-                    className="
-          pointer-events-none absolute inset-x-0 top-0 h-px
-          bg-gradient-to-r from-transparent via-primary/70 to-transparent
-          opacity-0 transition-opacity duration-300
-          group-hover:opacity-100
-        "
-                  />
+          {/* Category Filter */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-[rgba(120,90,70,0.15)] bg-white/80 px-3 py-1.5">
+            <span className="text-[11px] font-semibold text-[#8A7E76]">Category:</span>
+            <select
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setPage(1);
+              }}
+              className="bg-transparent font-bold text-[#2B2320] outline-none cursor-pointer text-xs max-w-xs truncate"
+            >
+              {uniqueCategories.map((c: any) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
 
-                  {/* Product visual */}
-                  <div className="relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 via-background to-cyan-500/5">
-                    <div
-                      className="
-            absolute h-32 w-32 rounded-full
-            bg-primary/10 blur-3xl
-            transition-all duration-500
-            group-hover:scale-125
-            group-hover:bg-primary/15
-          "
-                    />
+          {/* Validation Status Filter */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-[rgba(120,90,70,0.15)] bg-white/80 px-3 py-1.5">
+            <span className="text-[11px] font-semibold text-[#8A7E76]">Validation:</span>
+            <select
+              value={selectedStatus}
+              onChange={(e) => {
+                setSelectedStatus(e.target.value);
+                setPage(1);
+              }}
+              className="bg-transparent font-bold text-[#2B2320] outline-none cursor-pointer text-xs"
+            >
+              <option value="ALL">ALL Statuses</option>
+              <option value="PASS">Pass (Verified)</option>
+              <option value="REVIEW_REQUIRED">Needs Review</option>
+              <option value="WARNING">Warning</option>
+            </select>
+          </div>
 
-                    {product.images?.[0] ? (
-                      <img
-                        src={product.images[0]}
-                        alt={product.title}
-                        className="
-                          relative z-10 h-32 w-32 object-contain
-                          drop-shadow-xl
-                          transition-transform duration-500 ease-out
-                          group-hover:scale-110
-                        "
-                      />
-                    ) : (
-                      <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-2xl border border-border/60 bg-background/60 text-muted-foreground">
-                        <Package className="h-10 w-10" />
-                      </div>
-                    )}
+          {/* Sort Control */}
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-[11px] text-[#8A7E76]">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-xl border border-[rgba(120,90,70,0.15)] bg-white/80 px-2.5 py-1.5 text-xs font-semibold text-[#2B2320] outline-none"
+            >
+              <option value="id">Product ID</option>
+              <option value="mfg_part_num">SKU Part #</option>
+              <option value="completeness_score">Completeness</option>
+              <option value="confidence_score">Confidence</option>
+            </select>
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="rounded-xl border border-[rgba(120,90,70,0.15)] bg-white/80 p-2 text-[#6B5E56] hover:text-[#2B2320]"
+              title="Toggle Sort Order"
+            >
+              <ArrowUpDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
 
-                    {/* Status */}
-                    <div className="absolute left-3 top-3 z-20">
-                      <StatusBadge status={product.status} />
+      {/* Product Table */}
+      <div className="glass-panel rounded-2xl overflow-hidden border border-[rgba(120,90,70,0.12)]">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[rgba(120,90,70,0.1)] bg-[rgba(241,236,231,0.5)] text-[#6B5E56] font-semibold uppercase tracking-wider">
+                <th className="py-3 px-4">SKU / MPN</th>
+                <th className="py-3 px-4">Cleaned Title</th>
+                <th className="py-3 px-4">Resolved Brand</th>
+                <th className="py-3 px-4">Category</th>
+                <th className="py-3 px-4">Completeness</th>
+                <th className="py-3 px-4">Validation</th>
+                <th className="py-3 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[rgba(120,90,70,0.06)]">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-[#8A7E76]">
+                    <div className="inline-flex items-center gap-2">
+                      <span className="h-4 w-4 rounded-full border-2 border-[#E8703A] border-t-transparent animate-spin" />
+                      <span>Loading products from active dataset...</span>
                     </div>
-
-                    {/* Open indicator */}
-                    <div
-                      className="
-            absolute right-3 top-3 z-20
-            flex h-8 w-8 items-center justify-center
-            rounded-full border border-border/60
-            bg-background/70 backdrop-blur
-            opacity-0
-            translate-x-2
-            transition-all duration-300
-            group-hover:translate-x-0
-            group-hover:opacity-100
-          "
-                    >
-                      <ArrowUpRight className="h-4 w-4 text-primary" />
-                    </div>
-                  </div>
-
-                  {/* Product information */}
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-base font-bold tracking-tight text-foreground">
-                          {product.title}
-                        </p>
-
-                        <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                          {product.sku}
-                        </p>
-                      </div>
-
-                      <Sparkles
-                        className="
-              h-4 w-4 shrink-0 text-primary/40
-              transition-all duration-300
-              group-hover:scale-110
-              group-hover:text-primary
-            "
-                      />
-                    </div>
-
-                    {/* Brand / category */}
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/40 px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground">
-                        <Tag className="h-3 w-3" />
-                        {product.brand}
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-[#8A7E76]">
+                    <Package className="mx-auto h-8 w-8 text-[#9C8F86] opacity-50" />
+                    <p className="mt-2 text-sm font-bold text-[#2B2320]">No products match these filters</p>
+                    <p className="text-xs text-[#8A7E76]">Try adjusting search or processing this dataset.</p>
+                  </td>
+                </tr>
+              ) : (
+                items.map((prod) => (
+                  <tr
+                    key={prod.id}
+                    onClick={() => handleSelect(String(prod.id))}
+                    className="hover:bg-white/60 cursor-pointer transition-colors"
+                  >
+                    <td className="py-3 px-4 font-mono font-bold text-[#2B2320]">
+                      <span className="text-[#E8703A]">{prod.mfg_part_num}</span>
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-[#2B2320] max-w-[320px] truncate" title={prod.cleaned_name}>
+                      {prod.cleaned_name || prod.part_desc || 'Unformatted Item'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="rounded-md bg-[#FAF5EF] border border-[rgba(120,90,70,0.12)] px-2 py-0.5 font-semibold text-[#2B2320]">
+                        {prod.canonical_brand}
                       </span>
-
-                      <span className="truncate rounded-lg border border-border/60 bg-secondary/40 px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground">
-                        {product.category}
-                      </span>
-                    </div>
-
-                    {/* Metrics */}
-                    <div className="mt-5 grid grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-border/50 bg-secondary/20 p-3">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                          Quality
-                        </p>
-
-                        <div className="mt-1.5 flex items-end gap-1">
-                          <span className="text-lg font-black text-foreground">
-                            {product.qualityScore}
-                          </span>
-                          <span className="mb-0.5 text-[10px] font-semibold text-muted-foreground">
-                            %
-                          </span>
-                        </div>
-
-                        <div className="mt-2 h-1 overflow-hidden rounded-full bg-secondary">
+                    </td>
+                    <td className="py-3 px-4 text-[#6B5E56] max-w-[200px] truncate">
+                      {prod.category}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-14 rounded-full bg-[rgba(120,90,70,0.1)] overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-primary transition-all duration-700"
-                            style={{
-                              width: `${Math.min(product.qualityScore, 100)}%`,
-                            }}
+                            className="h-full bg-[#C77F2E] rounded-full"
+                            style={{ width: `${prod.completeness_score}%` }}
                           />
                         </div>
+                        <span className="font-bold text-[#2B2320] text-[11px]">{prod.completeness_score}%</span>
                       </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <StatusBadge
+                        status={
+                          prod.validation_status === 'PASS'
+                            ? 'verified'
+                            : prod.validation_status === 'REVIEW_REQUIRED'
+                            ? 'needs_review'
+                            : 'inferred'
+                        }
+                      />
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelect(String(prod.id));
+                        }}
+                        className="h-7 gap-1 px-2.5 text-xs text-[#E8703A] hover:bg-[#FBEEDD] rounded-lg font-bold"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>Inspect</span>
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-                      <div className="rounded-xl border border-border/50 bg-secondary/20 p-3">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                          Confidence
-                        </p>
+        {/* Pagination Bar */}
+        <div className="flex items-center justify-between border-t border-[rgba(120,90,70,0.1)] px-4 py-3 bg-[rgba(241,236,231,0.4)] text-xs text-[#6B5E56]">
+          <div className="flex items-center gap-2">
+            <span>Showing {items.length > 0 ? (page - 1) * pageSize + 1 : 0} - {Math.min(page * pageSize, totalItems)} of {totalItems.toLocaleString()} products</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              className="ml-2 rounded-xl border border-[rgba(120,90,70,0.15)] bg-white px-2 py-1 text-xs outline-none"
+            >
+              <option value="10">10 / page</option>
+              <option value="25">25 / page</option>
+              <option value="50">50 / page</option>
+              <option value="100">100 / page</option>
+            </select>
+          </div>
 
-                        <div className="mt-2">
-                          <ConfidenceBadge score={product.confidenceScore} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
-                      <span className="text-[10px] font-semibold capitalize text-muted-foreground">
-                        {product.enrichmentStatus.replace('_', ' ')}
-                      </span>
-
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-primary opacity-70 transition-all duration-300 group-hover:gap-2 group-hover:opacity-100">
-                        Inspect
-                        <ArrowUpRight className="h-3 w-3" />
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              ))}
-
-            </div>
-          )}
-        </>
-      )
-      }
-    </div >
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="h-8 w-8 p-0 border-[rgba(120,90,70,0.2)] bg-white/80 rounded-lg"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="px-2 font-bold text-[#2B2320]">Page {page} of {totalPages}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage(page + 1)}
+              className="h-8 w-8 p-0 border-[rgba(120,90,70,0.2)] bg-white/80 rounded-lg"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
