@@ -1,14 +1,8 @@
 {
   "name": "anvaya-monorepo",
   "private": true,
-  "workspaces": [
-    "frontend"
-  ],
   "scripts": {
-    "build": "npm run build --prefix frontend && node -e \"const fs=require('fs'); if(fs.existsSync('frontend/dist')){fs.cpSync('frontend/dist','dist',{recursive:true});}\"",
-    "vercel-build": "npm run build --prefix frontend && node -e \"const fs=require('fs'); if(fs.existsSync('frontend/dist')){fs.cpSync('frontend/dist','dist',{recursive:true});}\""
-  },
-  "devDependencies": {
-    "supabase": "^2.115.0"
+    "build": "npm install --include=optional --prefix frontend && npm run build --prefix frontend && node -e \"const fs=require('fs'); if(fs.existsSync('frontend/dist')){fs.cpSync('frontend/dist','dist',{recursive:true});}\"",
+    "vercel-build": "npm install --include=optional --prefix frontend && npm run build --prefix frontend && node -e \"const fs=require('fs'); if(fs.existsSync('frontend/dist')){fs.cpSync('frontend/dist','dist',{recursive:true});}\""
   }
 }
