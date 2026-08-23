@@ -226,14 +226,27 @@ function getMockApiResponse<T>(path: string, options: RequestOptions = {}): T | 
     }
 
     const categoriesMap: Record<string, number> = {};
+    const brandsMap: Record<string, number> = {};
     products.forEach((p) => {
       const cat = (p.category_classpath || 'General Industrial').split(' > ')[0];
       categoriesMap[cat] = (categoriesMap[cat] || 0) + 1;
+      const b = p.canonical_brand || 'Industrial Master';
+      brandsMap[b] = (brandsMap[b] || 0) + 1;
     });
     const taxonomy_distribution = Object.entries(categoriesMap).map(([name, count]) => ({
       name,
       count,
       percentage: Math.round((count / products.length) * 1000) / 10,
+    }));
+    const categories_distribution = taxonomy_distribution.map((t) => ({
+      name: t.name,
+      count: t.count,
+      share: t.percentage,
+    }));
+    const brands_distribution = Object.entries(brandsMap).map(([name, count]) => ({
+      name,
+      count,
+      share: Math.round((count / products.length) * 1000) / 10,
     }));
 
     return {
@@ -243,11 +256,32 @@ function getMockApiResponse<T>(path: string, options: RequestOptions = {}): T | 
           total_products: products.length,
           cleanliness_score: 99.2,
           completeness_score: 98.4,
+          avg_completeness_score: 98.4,
           compliance_score: 100.0,
           flagged_reviews: Math.min(2, Math.floor(products.length * 0.1)),
+          review_queue_count: Math.min(2, Math.floor(products.length * 0.1)),
+          passed_validation_count: Math.round(products.length * 0.94),
+          resolved_brands_count: Object.keys(brandsMap).length || products.length,
           unresolved_conflicts: Math.min(1, Math.floor(products.length * 0.05)),
         },
         taxonomy_distribution,
+        categories_distribution,
+        brands_distribution,
+        validation_radar: {
+          critical: 0,
+          warning: Math.min(2, Math.floor(products.length * 0.1)),
+          info: 1,
+          duplicate_skus: 0,
+          total_flagged: Math.min(2, Math.floor(products.length * 0.1)),
+        },
+        recent_activity: [
+          {
+            id: 1,
+            event_type: 'PIPELINE_COMPLETE',
+            description: `8-Stage Intelligence Pipeline completed for ${products.length} SKUs`,
+            timestamp: 'Just now',
+          },
+        ],
         enrichment_stats: {
           normalized_units: products.length * 3,
           recovered_brands: products.length,
