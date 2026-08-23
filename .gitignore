@@ -39,7 +39,6 @@ data/uploads/
 
 # Scratch & duplicates
 scratch/
-anvaya/
 
 # Vercel
 .vercel

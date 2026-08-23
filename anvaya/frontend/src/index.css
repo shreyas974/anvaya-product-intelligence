@@ -1,0 +1,222 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Sunrise Liquid Glass Palette Tokens (Section 62) */
+    --background: 34 50% 98%;           /* #FFFBF7 Warm-White Surface Base */
+    --foreground: 15 15% 15%;           /* #2B2320 Warm Near-Black Text */
+    
+    --card: 34 50% 98%;                 /* #FFFBF7 Warm-White Card Surface */
+    --card-foreground: 15 15% 15%;
+    
+    --popover: 34 50% 98%;
+    --popover-foreground: 15 15% 15%;
+    
+    --primary: 18 80% 57%;              /* #E8703A Burnt Coral Primary CTA */
+    --primary-foreground: 34 50% 98%;
+    
+    --secondary: 30 85% 65%;            /* #F2A65A Amber Gold Secondary */
+    --secondary-foreground: 15 15% 15%;
+    
+    --muted: 30 15% 92%;                /* #F1ECE7 Muted Warm Grey */
+    --muted-foreground: 22 10% 45%;      /* #6B5E56 Secondary Text */
+    
+    --accent: 18 80% 57%;               /* #E8703A Accent Primary */
+    --accent-foreground: 34 50% 98%;
+    
+    --destructive: 6 60% 44%;           /* #B23B2E Terracotta Red Error */
+    --destructive-foreground: 34 50% 98%;
+
+    --border: 24 25% 85%;               /* rgba(120, 90, 70, 0.15) */
+    --input: 24 25% 85%;
+    --ring: 18 80% 57%;
+
+    --radius: 1rem;
+  }
+}
+
+/* =========================================================================
+   SERIF TYPOGRAPHY SPECIFICATION (Section 63)
+   ========================================================================= */
+body, input, button, select, textarea, table, th, td, h1, h2, h3, h4, h5, h6, p, span, a, label {
+  font-family: "Times New Roman", Times, "Liberation Serif", Georgia, serif;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #FFFBF7;
+  color: #2B2320;
+  line-height: 1.55;
+  font-size: 15px;
+}
+
+/* Exceptions: Code blocks, JSON, terminal logs, and system badges remain Monospaced */
+code, pre, kbd, samp, .font-mono {
+  font-family: Consolas, "Liberation Mono", "Courier New", Courier, monospace !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Table Compensations per Section 63 (Relaxed line-height & minimum 13-14px) */
+table th, table td {
+  line-height: 1.6;
+  font-size: 13.5px;
+}
+
+/* =========================================================================
+   SUNRISE LIQUID GLASS DESIGN SYSTEM (Section 62)
+   ========================================================================= */
+
+/* Base Sunrise Canvas Gradient for Marketing / Hero / Auth / Workspace Outer Canvas */
+.bg-sunrise-canvas {
+  background: linear-gradient(135deg, rgba(255, 217, 160, 0.35) 0%, rgba(255, 158, 125, 0.30) 25%, rgba(253, 180, 192, 0.25) 50%, rgba(201, 184, 232, 0.25) 75%, rgba(175, 211, 232, 0.20) 100%);
+}
+
+.bg-sunrise-saturated {
+  background: linear-gradient(135deg, #FFD9A0 0%, #FF9E7D 30%, #FDB4C0 60%, #C9B8E8 85%, #AFD3E8 100%);
+}
+
+.bg-sunrise-hero {
+  background: radial-gradient(ellipse at bottom, rgba(255, 217, 160, 0.55) 0%, rgba(255, 158, 125, 0.4) 35%, rgba(201, 184, 232, 0.25) 70%, transparent 100%),
+              linear-gradient(180deg, #FFFBF7 0%, rgba(255, 251, 247, 0.7) 100%);
+}
+
+/* Frosted Liquid Glass Card (≥80% opacity for text & tables per Section 62) */
+.glass-panel {
+  background: rgba(255, 251, 247, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(120, 90, 70, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(120, 70, 40, 0.06), 0 2px 8px 0 rgba(120, 70, 40, 0.03);
+  border-radius: 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(120, 90, 70, 0.22);
+  box-shadow: 0 12px 40px 0 rgba(120, 70, 40, 0.09), 0 4px 12px 0 rgba(120, 70, 40, 0.04);
+}
+
+/* Floating Glass Surface for Modals / Drawers */
+.glass-surface-floating {
+  background: rgba(255, 251, 247, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(120, 90, 70, 0.15);
+  box-shadow: 0 20px 60px 0 rgba(120, 70, 40, 0.15);
+}
+
+/* Inset Soft Tray */
+.glass-inset {
+  background: rgba(241, 236, 231, 0.65);
+  border: 1px solid rgba(120, 90, 70, 0.08);
+  box-shadow: inset 0 2px 4px 0 rgba(120, 70, 40, 0.03);
+  border-radius: 0.875rem;
+}
+
+/* Primary Button (Burnt Coral with Warm Glow) */
+.btn-sunrise-primary {
+  background: linear-gradient(135deg, #E8703A 0%, #D45D28 100%);
+  color: #FFFBF7;
+  font-weight: 700;
+  border: 1px solid rgba(232, 112, 58, 0.4);
+  box-shadow: 0 4px 14px 0 rgba(232, 112, 58, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-sunrise-primary:hover {
+  background: linear-gradient(135deg, #F07E4A 0%, #E8703A 100%);
+  box-shadow: 0 6px 20px 0 rgba(232, 112, 58, 0.38);
+  transform: translateY(-1px);
+}
+
+.btn-sunrise-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button (Amber Gold Accent) */
+.btn-sunrise-secondary {
+  background: rgba(242, 166, 90, 0.12);
+  color: #C77F2E;
+  font-weight: 700;
+  border: 1px solid rgba(242, 166, 90, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-sunrise-secondary:hover {
+  background: rgba(242, 166, 90, 0.22);
+  border-color: rgba(242, 166, 90, 0.45);
+}
+
+/* Active Nav Capsule */
+.sunrise-active-nav {
+  background: linear-gradient(135deg, rgba(232, 112, 58, 0.12) 0%, rgba(242, 166, 90, 0.10) 100%);
+  border: 1px solid rgba(232, 112, 58, 0.28);
+  color: #E8703A;
+  font-weight: 700;
+  box-shadow: 0 2px 8px 0 rgba(232, 112, 58, 0.08);
+}
+
+/* Semantic Status Badge Tokens (Section 62) */
+.status-badge-verified,
+.status-badge-passed {
+  background-color: #FBEEDD;
+  color: #C77F2E;
+  border: 1px solid rgba(199, 127, 46, 0.3);
+}
+
+.status-badge-matched,
+.status-badge-supported {
+  background-color: #FBEEDD;
+  color: #B8863B;
+  border: 1px solid rgba(184, 134, 59, 0.3);
+}
+
+.status-badge-inferred {
+  background-color: #FBF2E6;
+  color: #C98A52;
+  border: 1px solid rgba(201, 138, 82, 0.3);
+}
+
+.status-badge-review {
+  background-color: #FDEADE;
+  color: #C2571F;
+  border: 1px solid rgba(194, 87, 31, 0.3);
+}
+
+.status-badge-unavailable {
+  background-color: #F1ECE7;
+  color: #8A7E76;
+  border: 1px solid rgba(138, 126, 118, 0.3);
+}
+
+.status-badge-failed,
+.status-badge-error {
+  background-color: #FBE3DE;
+  color: #B23B2E;
+  border: 1px solid rgba(178, 59, 46, 0.3);
+}
+
+/* Clean Custom Scrollbar in Warm Tones */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(241, 236, 231, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 90, 70, 0.2);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 90, 70, 0.35);
+}

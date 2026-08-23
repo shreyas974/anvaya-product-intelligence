@@ -1,0 +1,14 @@
+{
+  "name": "anvaya-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "vercel-build": "cd frontend && npm install && npm run build"
+  },
+  "devDependencies": {
+    "supabase": "^2.115.0"
+  },
+  "dependencies": {
+    "react": "^19.2.8"
+  }
+}
