@@ -25,10 +25,14 @@ import { ProductTour } from '@/components/tour/ProductTour';
 import { DatasetProvider, useDataset } from '@/context/DatasetContext';
 import { request } from '@/services/api/apiClient';
 
-function AppContent() {
+export interface AppProps {
+  initialView?: 'app' | 'landing' | 'login';
+}
+
+function AppContent({ initialView = 'landing' }: AppProps) {
   const { activeDatasetId } = useDataset();
 
-  const [currentView, setCurrentView] = useState<'app' | 'landing' | 'login'>('app');
+  const [currentView, setCurrentView] = useState<'app' | 'landing' | 'login'>(initialView);
   const [activeSection, setActiveSection] = useState('overview');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
@@ -210,10 +214,10 @@ function AppContent() {
   );
 }
 
-export default function App() {
+export default function App({ initialView = 'landing' }: AppProps) {
   return (
     <DatasetProvider>
-      <AppContent />
+      <AppContent initialView={initialView} />
     </DatasetProvider>
   );
 }

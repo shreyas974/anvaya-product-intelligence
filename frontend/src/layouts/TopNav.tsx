@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
   Plus,
   Trash2,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDataset } from '@/context/DatasetContext';
@@ -245,6 +246,18 @@ export function TopNav({
             <p className="text-[10px] text-[#8A7E76] leading-none mt-1">{userEmail}</p>
           </div>
         </div>
+
+        {onNavigate && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onNavigate('landing')}
+            className="text-xs text-[#8A7E76] hover:text-[#B23B2E] hover:bg-[#FBE3DE] rounded-xl p-1.5 h-8 w-8"
+            title="Sign Out to Landing Page"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </header>
   );

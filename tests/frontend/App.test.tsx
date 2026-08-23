@@ -11,33 +11,37 @@ describe('App Integration', () => {
     apiConfig.simulatedLatencyMaxMs = 0;
   });
 
-  it('renders the ANVAYA application shell and Clean Workspace welcome banner', async () => {
-    render(<App />);
+  it('renders the Landing Page first on launch with hero and capabilities', async () => {
+    render(<App initialView="landing" />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Turn Messy Product Data Into Clean/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/100% normalized, classified, enriched, validated/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Launch Platform/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Sign In/i }).length).toBeGreaterThan(0);
+  });
+
+  it('renders the Login Page when navigating to login', async () => {
+    render(<App initialView="login" />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Enterprise Product Intelligence/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: /Sign In to Workspace/i })).toBeInTheDocument();
+  });
+
+  it('renders Mission Control and allows navigation between sections', async () => {
+    render(<App initialView="app" />);
 
     await waitFor(() => {
       expect(screen.getByText('Welcome to ANVAYA')).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/Clean Workspace State/i)).toBeInTheDocument();
-    expect(screen.getByText(/Upload Dataset/i)).toBeInTheDocument();
-  });
-
-  it('renders the core navigation elements and workspace switcher', async () => {
-    render(<App />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Default Enterprise Workspace')).toBeInTheDocument();
-    });
-
+    expect(screen.getByText('Default Enterprise Workspace')).toBeInTheDocument();
     expect(screen.getByText('No Dataset Selected')).toBeInTheDocument();
-  });
-
-  it('allows navigation from Mission Control to Products page and back', async () => {
-    render(<App />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Welcome to ANVAYA')).toBeInTheDocument();
-    });
 
     // Navigate to Products via sidebar
     const productsNav = screen.getByRole('button', { name: /^Products$/i });
