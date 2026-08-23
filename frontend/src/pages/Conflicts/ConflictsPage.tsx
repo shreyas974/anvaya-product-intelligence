@@ -7,18 +7,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { request } from '@/services/api/apiClient';
 
+import { useDataset } from '@/context/DatasetContext';
+
 export interface ConflictsPageProps {
   onSelectProduct?: (productId: string) => void;
 }
 
 export function ConflictsPage({ onSelectProduct }: ConflictsPageProps) {
+  const { activeDatasetId, activeDataset } = useDataset();
   const [loading, setLoading] = useState(true);
   const [conflicts, setConflicts] = useState<any[]>([]);
 
   async function loadConflicts() {
+    if (!activeDatasetId) {
+      setConflicts([]);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
-      const res = await request<any>('/conflicts');
+      const res = await request<any>(`/conflicts?dataset_id=${activeDatasetId}`);
       if (res?.data) {
         setConflicts(res.data.conflicts || []);
       }
@@ -31,7 +39,19 @@ export function ConflictsPage({ onSelectProduct }: ConflictsPageProps) {
 
   useEffect(() => {
     loadConflicts();
-  }, []);
+  }, [activeDatasetId]);
+
+  if (!activeDatasetId) {
+    return (
+      <div className="glass-panel p-12 text-center rounded-3xl space-y-4 max-w-xl mx-auto my-12 border border-[rgba(120,90,70,0.15)]">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-[#9C8F86] opacity-60" />
+        <h3 className="text-lg font-bold text-[#2B2320]">No Active Dataset Selected</h3>
+        <p className="text-xs text-[#6B5E56] leading-relaxed">
+          Conflict detection evaluates vendor discrepancies against canonical LOVs per dataset. Upload or select a dataset to audit conflicts.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12">
@@ -43,12 +63,12 @@ export function ConflictsPage({ onSelectProduct }: ConflictsPageProps) {
               Discrepancy Resolver
             </span>
             <span className="text-xs text-[#8A7E76] font-mono">
-              {conflicts.length} Anomalies Flagged
+              {activeDataset?.name} • {conflicts.length} Anomalies Flagged
             </span>
           </div>
           <h1 className="text-2xl font-black text-[#2B2320] mt-1">Cross-Feed Vendor Conflict Resolution</h1>
           <p className="text-xs text-[#6B5E56]">
-            Automated detection of manufacturer vs brand discrepancies, duplicate supplier SKUs, and controlled dictionary mismatches.
+            Automated detection of manufacturer vs brand discrepancies, duplicate supplier SKUs, and controlled dictionary mismatches for <strong>{activeDataset?.name}</strong>.
           </p>
         </div>
 

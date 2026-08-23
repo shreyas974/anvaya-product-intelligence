@@ -221,11 +221,152 @@ class OllamaAdapter(AIProvider):
         return json.loads(text)
 
 
+class ClaudeAdapter(AIProvider):
+    """Anthropic Claude adapter (Claude 3.5 Sonnet / Claude 3 Haiku)."""
+
+    def __init__(self) -> None:
+        self.api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("CLAUDE_API_KEY", "")
+        self.base_url = "https://api.anthropic.com/v1/messages"
+        self.model = "claude-3-5-sonnet-20241022"
+
+    @property
+    def name(self) -> str:
+        return "Anthropic Claude"
+
+    def is_available(self) -> bool:
+        return bool(self.api_key) and not self.api_key.startswith("sk-ant-placeholder")
+
+    async def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
+        headers = {
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        body: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": kwargs.get("max_tokens", 2048),
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if system_prompt:
+            body["system"] = system_prompt
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(self.base_url, headers=headers, json=body)
+            resp.raise_for_status()
+            data = resp.json()
+            return data["content"][0]["text"]
+
+    async def generate_json(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> dict[str, Any]:
+        text = await self.generate(
+            f"{prompt}\n\nIMPORTANT: Respond ONLY with valid JSON. Do not include markdown fences.",
+            system_prompt,
+        )
+        text = text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+        return json.loads(text)
+
+
+class KimiAdapter(AIProvider):
+    """Moonshot AI Kimi adapter for high-precision technical extraction."""
+
+    def __init__(self) -> None:
+        self.api_key = os.environ.get("KIMI_API_KEY") or os.environ.get("MOONSHOT_API_KEY", "")
+        self.base_url = "https://api.moonshot.cn/v1/chat/completions"
+        self.model = "moonshot-v1-8k"
+
+    @property
+    def name(self) -> str:
+        return "Kimi AI (Moonshot)"
+
+    def is_available(self) -> bool:
+        return bool(self.api_key) and not self.api_key.startswith("sk-kimi-placeholder")
+
+    async def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                self.base_url,
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={"model": self.model, "messages": messages, "temperature": 0.1},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"]
+
+    async def generate_json(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> dict[str, Any]:
+        text = await self.generate(f"{prompt}\n\nRespond ONLY with valid JSON.", system_prompt)
+        text = text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+        return json.loads(text)
+
+
+class OpenAIAdapter(AIProvider):
+    """OpenAI GPT-4o adapter."""
+
+    def __init__(self) -> None:
+        self.api_key = os.environ.get("OPENAI_API_KEY", "")
+        self.base_url = "https://api.openai.com/v1/chat/completions"
+        self.model = "gpt-4o"
+
+    @property
+    def name(self) -> str:
+        return "OpenAI (GPT-4o)"
+
+    def is_available(self) -> bool:
+        return bool(self.api_key) and not self.api_key.startswith("sk-proj-placeholder")
+
+    async def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                self.base_url,
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={"model": self.model, "messages": messages, "temperature": 0.1},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"]
+
+    async def generate_json(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> dict[str, Any]:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                self.base_url,
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={
+                    "model": self.model,
+                    "messages": messages,
+                    "temperature": 0.1,
+                    "response_format": {"type": "json_object"},
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return json.loads(data["choices"][0]["message"]["content"])
+
+
 # =========================================================================
 # Provider Registry & Router
 # =========================================================================
 
 _providers: list[AIProvider] = [
+    ClaudeAdapter(),
+    KimiAdapter(),
+    OpenAIAdapter(),
     GeminiAdapter(),
     GroqAdapter(),
     OpenRouterAdapter(),

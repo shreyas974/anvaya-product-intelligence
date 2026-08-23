@@ -8,6 +8,7 @@ from ai.models.free_llm_engine import (
     FreeLLMProvider,
     FreeLLMConfig,
     EnrichmentLLMResponse,
+    LLMGenerationResponse,
 )
 from ai.models.kimi_client import KimiClient, KimiEnrichmentResponse
 
@@ -18,6 +19,7 @@ __all__ = [
     "FreeLLMProvider",
     "FreeLLMConfig",
     "EnrichmentLLMResponse",
+    "LLMGenerationResponse",
     "KimiClient",
     "KimiEnrichmentResponse",
 ]

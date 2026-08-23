@@ -33,7 +33,7 @@ def build_product_truth_layer(product: Product) -> dict[str, Any]:
     descriptions = product.descriptions or {}
     prov_map = {pr.field_name: pr for pr in product.provenance_records}
 
-    truth_fields = []
+    truth_fields: list[dict[str, Any]] = []
 
     # 1. Product Identifier (MPN / SKU)
     truth_fields.append({
@@ -89,34 +89,39 @@ def build_product_truth_layer(product: Product) -> dict[str, Any]:
     elif product.e1_brand or product.unilog_brand or product.dib_brand:
         brand_status = "VERIFIED"
 
+    canonical_brand_val = product.canonical_brand or "Generic / Unbranded"
+    brand_evidence = brand_prov.evidence if (brand_prov and brand_prov.evidence) else f"Matched entity from '{product.part_desc}'"
+    brand_source = brand_prov.source if (brand_prov and brand_prov.source) else "Part_Desc / Part_Manuf"
+
     truth_fields.append({
         "field": "Brand",
         "raw_value": product.e1_brand or product.unilog_brand or product.dib_brand or "Not supplied in brand columns",
-        "normalized_value": product.canonical_brand,
-        "evidence": brand_prov.evidence if brand_prov else f"Matched entity from '{product.part_desc}'",
-        "source": brand_prov.source if brand_prov else "Part_Desc / Part_Manuf",
+        "normalized_value": canonical_brand_val,
+        "evidence": brand_evidence,
+        "source": brand_source,
         "rule_or_lov": "UniCat_Manufacturer_and_Brand_List.xlsx",
         "confidence": round((brand_prov.confidence * 100) if brand_prov else 90.0, 1),
         "status": brand_status,
         "decision_trace": {
             "raw_evidence": product.part_desc or "None",
-            "detected_term": product.canonical_brand,
-            "candidate_value": product.canonical_brand,
+            "detected_term": canonical_brand_val,
+            "candidate_value": canonical_brand_val,
             "vocabulary_match": "UniCat Brand Master (1,000+ Brands)",
             "applicable_category": product.category or "General",
             "validation_result": "Approved Entity" if brand_status != "REQUIRES REVIEW" else "Review Required",
             "confidence": round((brand_prov.confidence * 100) if brand_prov else 90.0, 1),
-            "decision": f"Mapped to canonical brand '{product.canonical_brand}' with traceable provenance",
+            "decision": f"Mapped to canonical brand '{canonical_brand_val}' with traceable provenance",
         }
     })
 
     # 4. Taxonomy / ClassPath
     cat_prov = prov_map.get("Category")
+    cat_evidence = cat_prov.evidence if (cat_prov and cat_prov.evidence) else "Keyword rule matched in description"
     truth_fields.append({
         "field": "Taxonomy ClassPath",
         "raw_value": "Not provided in raw feeds",
         "normalized_value": f"{product.category} > {product.subcategory}",
-        "evidence": cat_prov.evidence if cat_prov else f"Keyword rule matched in description",
+        "evidence": cat_evidence,
         "source": "AI Zero-Shot Taxonomy Matcher",
         "rule_or_lov": "UNILOG Internal Taxonomy Guidelines & LOV",
         "confidence": round((cat_prov.confidence * 100) if cat_prov else 92.0, 1),
@@ -137,17 +142,20 @@ def build_product_truth_layer(product: Product) -> dict[str, Any]:
     for attr_name, attr_val in attrs.items():
         prov = prov_map.get(attr_name)
         norm_val, _, uom_rule = normalize_uom_string(str(attr_val))
+        attr_evidence = prov.evidence if (prov and prov.evidence) else f"Regex matched '{attr_val}' in description"
+        attr_source = prov.source if (prov and prov.source) else "Part_Desc"
+        raw_ev = prov.evidence if (prov and prov.evidence) else str(attr_val)
         truth_fields.append({
             "field": f"Attribute: {attr_name}",
             "raw_value": str(attr_val),
             "normalized_value": norm_val,
-            "evidence": prov.evidence if prov else f"Regex matched '{attr_val}' in description",
-            "source": prov.source if prov else "Part_Desc",
+            "evidence": attr_evidence,
+            "source": attr_source,
             "rule_or_lov": uom_rule or "Decimal_Fraction.xlsx & LOV Constraints",
             "confidence": round((prov.confidence * 100) if prov else 95.0, 1),
             "status": "NORMALIZED" if norm_val != str(attr_val) else "INFERRED",
             "decision_trace": {
-                "raw_evidence": prov.evidence if prov else str(attr_val),
+                "raw_evidence": raw_ev,
                 "detected_term": str(attr_val),
                 "candidate_value": norm_val,
                 "vocabulary_match": "Unilog Master UOM Standards",

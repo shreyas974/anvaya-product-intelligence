@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     debug: bool = True
 
     database_url: str = "sqlite:///./data/anvaya.db"
+    secret_key: str = "anvaya-enterprise-master-secret-key-2026-auth-prod"
 
     supabase_url: str = "https://placeholder.supabase.co"
     supabase_anon_key: str = ""

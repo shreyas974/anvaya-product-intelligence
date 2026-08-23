@@ -33,13 +33,16 @@ describe('App Integration', () => {
       expect(screen.getByText(/Enterprise Product Intelligence/i)).toBeInTheDocument();
     });
 
+    // Switch to Create Account tab
+    fireEvent.click(screen.getByRole('button', { name: /Create Account/i }));
+
     expect(screen.getByRole('button', { name: /Create Account & Enter Workspace/i })).toBeInTheDocument();
 
     // Fill in registration form
     fireEvent.change(screen.getByPlaceholderText(/Enter your full name/i), { target: { value: 'Alex Morgan' } });
     fireEvent.change(screen.getByPlaceholderText(/Enter your enterprise name/i), { target: { value: 'Global Parts Co' } });
     fireEvent.change(screen.getByPlaceholderText(/name@enterprise.com/i), { target: { value: 'alex@globalparts.com' } });
-    fireEvent.change(screen.getByPlaceholderText(/Create a secure password/i), { target: { value: 'Password123!' } });
+    fireEvent.change(screen.getByPlaceholderText(/Create password/i), { target: { value: 'Password123!' } });
     fireEvent.change(screen.getByPlaceholderText(/Re-type your password/i), { target: { value: 'Password123!' } });
 
     // Submit registration

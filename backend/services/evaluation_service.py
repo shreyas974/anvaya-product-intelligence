@@ -43,10 +43,10 @@ def _normalize_for_comparison(val: Any) -> str:
 
 def _check_uom_compliance(value: str) -> bool:
     """Check if a value follows the 'number space unit' UOM standard."""
-    if not value or str(value).strip() == "" or str(value) == "nan":
+    if not value or value.strip() == "" or value == "nan":
         return True  # Empty values are compliant (no UOM to check)
 
-    value = str(value).strip()
+    value = value.strip()
 
     # Pattern: number (optional fraction) + space + unit abbreviation
     # Valid examples: "24 in", "120 V", "15 A", "50-1/4 in", "47 dBA"
@@ -70,9 +70,9 @@ def _check_uom_compliance(value: str) -> bool:
 
 def _check_char_limit(value: str, limit: int) -> bool:
     """Check if a value is within character limit."""
-    if not value or str(value).strip() == "" or str(value) == "nan":
+    if not value or value.strip() == "" or value == "nan":
         return True
-    return len(str(value).strip()) <= limit
+    return len(value.strip()) <= limit
 
 
 def run_benchmark_evaluation(

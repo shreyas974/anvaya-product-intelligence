@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
@@ -6,7 +7,30 @@ from fastapi import HTTPException, status
 from backend.core.config import settings
 
 
+def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(days=7))
+    to_encode.update({"exp": int(expire.timestamp())})
+    if "sub" not in to_encode and "email" in to_encode:
+        to_encode["sub"] = to_encode["email"]
+    return jwt.encode(to_encode, settings.secret_key, algorithm="HS256")
+
+
 def verify_supabase_token(token: str) -> dict[str, Any]:
+    # 1. First attempt direct HS256 decode with local secret_key
+    try:
+        payload = jwt.decode(
+            token,
+            settings.secret_key,
+            algorithms=["HS256"],
+            options={"verify_exp": True, "verify_aud": False},
+        )
+        if payload.get("sub"):
+            return payload
+    except Exception:
+        pass
+
+    # 2. Fall back to Supabase PyJWKClient validation
     try:
         header = jwt.get_unverified_header(token)
 

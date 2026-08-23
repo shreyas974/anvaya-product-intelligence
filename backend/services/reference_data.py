@@ -187,7 +187,7 @@ def normalize_uom_string(val_str: str) -> tuple[str, str, str | None]:
     if not val_str:
         return val_str, val_str, None
 
-    val_clean = str(val_str).strip()
+    val_clean = val_str.strip()
     match = re.match(r"^(\d+(?:[-/.]\d+)?)\s*([a-zA-Z\"'.]+)$", val_clean)
     if match:
         num = match.group(1).strip()
@@ -215,14 +215,15 @@ def normalize_fittings_spec(raw_desc: str) -> dict[str, Any]:
     Flagship Fittings normalization engine against Fittings_LOV.
     """
     desc_upper = raw_desc.upper()
-    results = {
+    evidence_trace: list[dict[str, Any]] = []
+    results: dict[str, Any] = {
         "raw_description": raw_desc,
         "fitting_type": None,
         "connection_type": None,
         "material": None,
         "size": None,
         "pressure_rating": None,
-        "evidence_trace": [],
+        "evidence_trace": evidence_trace,
     }
 
     # 1. Size Extraction (e.g. 3/8, 1/2", 3/4 IN, 1-1/2)

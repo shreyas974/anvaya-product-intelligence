@@ -23,14 +23,23 @@ from enum import Enum
 from dataclasses import dataclass, field
 from typing import Mapping, Any, Optional, List, TypedDict
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 logger = logging.getLogger("anvaya.ai.free_llm")
 
 
 class FreeLLMProvider(str, Enum):
-    """Supported free LLM providers."""
+    """Supported LLM providers (Free Tier, Local, and Cloud)."""
     GEMINI = "gemini"
     GROQ = "groq"
     OPENROUTER = "openrouter"
+    OPENAI = "openai"
+    DEEPSEEK = "deepseek"
+    MISTRAL = "mistral"
     OLLAMA = "ollama"
     LOCAL_GPU = "local_gpu"
     LOCAL = "local"
@@ -49,7 +58,7 @@ PROVIDER_DEFAULTS: dict[FreeLLMProvider, ProviderInfo] = {
     FreeLLMProvider.GEMINI: {
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
         "default_model": "gemini-2.0-flash",
-        "env_keys": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+        "env_keys": ["GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_AI_KEY"],
         "requires_key": True,
     },
     FreeLLMProvider.GROQ: {
@@ -61,13 +70,31 @@ PROVIDER_DEFAULTS: dict[FreeLLMProvider, ProviderInfo] = {
     FreeLLMProvider.OPENROUTER: {
         "base_url": "https://openrouter.ai/api/v1",
         "default_model": "deepseek/deepseek-r1:free",
-        "env_keys": ["OPENROUTER_API_KEY"],
+        "env_keys": ["OPENROUTER_API_KEY", "OPEN_ROUTER_KEY"],
+        "requires_key": True,
+    },
+    FreeLLMProvider.OPENAI: {
+        "base_url": "https://api.openai.com/v1",
+        "default_model": "gpt-4o-mini",
+        "env_keys": ["OPENAI_API_KEY"],
+        "requires_key": True,
+    },
+    FreeLLMProvider.DEEPSEEK: {
+        "base_url": "https://api.deepseek.com/v1",
+        "default_model": "deepseek-chat",
+        "env_keys": ["DEEPSEEK_API_KEY"],
+        "requires_key": True,
+    },
+    FreeLLMProvider.MISTRAL: {
+        "base_url": "https://api.mistral.ai/v1",
+        "default_model": "mistral-small-latest",
+        "env_keys": ["MISTRAL_API_KEY"],
         "requires_key": True,
     },
     FreeLLMProvider.OLLAMA: {
         "base_url": "http://localhost:11434/v1",
         "default_model": "qwen2.5:7b",
-        "env_keys": ["OLLAMA_BASE_URL"],
+        "env_keys": ["OLLAMA_BASE_URL", "OLLAMA_HOST"],
         "requires_key": False,
     },
     FreeLLMProvider.LOCAL_GPU: {
@@ -113,6 +140,16 @@ class EnrichmentLLMResponse:
     raw_response: str = ""
     provider_used: str = "fallback"
     model_used: str = "deterministic_template"
+
+
+@dataclass
+class LLMGenerationResponse:
+    """Structured response from generic LLM text generation."""
+    content: str
+    model: str = "deterministic"
+    provider: str = "fallback"
+    success: bool = True
+    raw_response: str = ""
 
 
 class FreeLLMEngine:
@@ -292,11 +329,14 @@ class FreeLLMEngine:
         if not self._clients:
             return self._local_fallback(mfg_part_num, part_desc, brand_name, mfg_name)
 
-        # Priority order for auto-fallback: Fast Cloud (Groq, Gemini) -> Free OpenRouter -> Local Ollama -> Kimi
+        # Priority order for auto-fallback: Cloud (Groq, Gemini, OpenRouter, OpenAI, DeepSeek, Mistral) -> Local Ollama -> Kimi
         order = [
             FreeLLMProvider.GROQ,
             FreeLLMProvider.GEMINI,
             FreeLLMProvider.OPENROUTER,
+            FreeLLMProvider.OPENAI,
+            FreeLLMProvider.DEEPSEEK,
+            FreeLLMProvider.MISTRAL,
             FreeLLMProvider.OLLAMA,
             FreeLLMProvider.KIMI,
         ]
@@ -361,7 +401,7 @@ class FreeLLMEngine:
                 }
                 
                 # Providers with full JSON mode support
-                if p in (FreeLLMProvider.GROQ, FreeLLMProvider.GEMINI, FreeLLMProvider.KIMI, FreeLLMProvider.OPENROUTER):
+                if p in (FreeLLMProvider.GROQ, FreeLLMProvider.GEMINI, FreeLLMProvider.KIMI, FreeLLMProvider.OPENROUTER, FreeLLMProvider.OPENAI, FreeLLMProvider.DEEPSEEK, FreeLLMProvider.MISTRAL):
                     kwargs["response_format"] = {"type": "json_object"}
 
                 response = client.chat.completions.create(**kwargs)
@@ -399,3 +439,92 @@ class FreeLLMEngine:
         fallback = self._local_fallback(mfg_part_num, part_desc, brand_name, mfg_name)
         fallback.raw_response = f"Cascaded through all providers; last error: {last_error}"
         return fallback
+
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.3,
+    ) -> LLMGenerationResponse:
+        """
+        Generic asynchronous text generation across free providers.
+        Cascades automatically across available providers.
+        """
+        import asyncio
+
+        def _sync_generate() -> LLMGenerationResponse:
+            if not self._clients:
+                return LLMGenerationResponse(
+                    content="",
+                    model="none",
+                    provider="none",
+                    success=False,
+                )
+
+            order = [
+                FreeLLMProvider.GROQ,
+                FreeLLMProvider.GEMINI,
+                FreeLLMProvider.OPENROUTER,
+                FreeLLMProvider.OPENAI,
+                FreeLLMProvider.DEEPSEEK,
+                FreeLLMProvider.MISTRAL,
+                FreeLLMProvider.OLLAMA,
+                FreeLLMProvider.KIMI,
+            ]
+
+            if self.provider != FreeLLMProvider.AUTO:
+                active_providers = [self.provider] if self.provider in self._clients else []
+            else:
+                active_providers = [p for p in order if p in self._clients]
+
+            if not active_providers:
+                return LLMGenerationResponse(
+                    content="",
+                    model="none",
+                    provider="none",
+                    success=False,
+                )
+
+            sys_msg = system_prompt or "You are Anvaya's industrial product intelligence assistant. Provide factual, precise answers."
+            messages = [
+                {"role": "system", "content": sys_msg},
+                {"role": "user", "content": prompt},
+            ]
+
+            last_error = ""
+            for p in active_providers:
+                client = self._clients[p]
+                model_name = self._get_model_for_provider(p)
+
+                # Skip local GPU in text generation unless implemented
+                if p in (FreeLLMProvider.LOCAL_GPU, FreeLLMProvider.LOCAL):
+                    continue
+
+                try:
+                    response = client.chat.completions.create(
+                        model=model_name,
+                        messages=messages,
+                        temperature=temperature,
+                    )
+                    content = response.choices[0].message.content or ""
+                    return LLMGenerationResponse(
+                        content=content,
+                        model=model_name,
+                        provider=p.value,
+                        success=True,
+                        raw_response=content,
+                    )
+                except Exception as e:
+                    last_error = f"[{p.value}/{model_name}] {str(e)}"
+                    logger.warning("Free LLM generation failed on %s: %s. Cascading...", p.value, e)
+                    continue
+
+            return LLMGenerationResponse(
+                content="",
+                model="fallback",
+                provider="fallback",
+                success=False,
+                raw_response=f"All providers failed. Last error: {last_error}",
+            )
+
+        return await asyncio.to_thread(_sync_generate)

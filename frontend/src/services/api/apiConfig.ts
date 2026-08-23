@@ -1,6 +1,6 @@
 /**
  * ANVAYA Frontend API Configuration
- * Defaults to connecting to the live FastAPI backend.
+ * Supports live backend and automatic client-side mock/cloud fallback when deployed to production.
  */
 
 const getEnvVar = (key: string, defaultValue: string): string => {
@@ -10,12 +10,13 @@ const getEnvVar = (key: string, defaultValue: string): string => {
   return defaultValue;
 };
 
-export const API_BASE_URL = getEnvVar('VITE_API_BASE_URL', 'http://127.0.0.1:8000/api/v1');
-
 export const getUseMocksDefault = (): boolean => {
   const envVal = getEnvVar('VITE_USE_MOCKS', 'false');
   return envVal === 'true' || envVal === '1';
 };
+
+
+export const API_BASE_URL = getEnvVar('VITE_API_BASE_URL', 'http://127.0.0.1:8000/api/v1');
 
 export interface ApiConfig {
   baseUrl: string;
@@ -28,7 +29,7 @@ export interface ApiConfig {
 export const apiConfig: ApiConfig = {
   baseUrl: API_BASE_URL,
   useMocks: getUseMocksDefault(),
-  timeoutMs: 10000,
+  timeoutMs: 8000,
   simulatedLatencyMinMs: 0,
   simulatedLatencyMaxMs: 0,
 };

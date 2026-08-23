@@ -166,6 +166,21 @@ class TestFreeLLMEngine:
                     assert res.provider_used == "gemini"
                     assert res.marketing_description == "Gemini fallback success."
 
+    @pytest.mark.anyio
+    async def test_free_llm_async_generate(self):
+        """Test generic async generate method."""
+        engine = FreeLLMEngine(provider="groq", api_key="fake_key")
+        mock_response = MagicMock()
+        mock_response.choices = [
+            MagicMock(message=MagicMock(content="Here is the RAG grounded answer."))
+        ]
+        with patch.object(engine._clients[FreeLLMProvider.GROQ].chat.completions, "create", return_value=mock_response):
+            res = await engine.generate(prompt="What is SKU 123?")
+            assert res.success is True
+            assert res.content == "Here is the RAG grounded answer."
+            assert res.provider == "groq"
+            assert res.model == "llama-3.3-70b-versatile"
+
 
 class TestDescriptionGeneratorFreeLLM:
     """Tests for DescriptionGenerator integrating FreeLLMEngine."""

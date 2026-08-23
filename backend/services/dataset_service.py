@@ -161,7 +161,7 @@ def create_and_profile_dataset(
     filename: str,
     file_bytes: bytes,
     workspace_id: str = "ws-default",
-    uploaded_by: str = "Devin Vance",
+    uploaded_by: str = "Enterprise User",
 ) -> Dataset:
     """Parses raw upload, profiles schema, saves Dataset row in DB."""
     df = parse_uploaded_file(file_bytes, filename)

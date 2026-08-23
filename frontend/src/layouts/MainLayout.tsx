@@ -25,8 +25,8 @@ export function MainLayout({
   onReplayTour,
   onStartTour,
   userRole = 'ADMIN',
-  userName = 'Devin Vance',
-  userEmail = 'lead.architect@enterprise.com',
+  userName = 'Master Catalog Lead',
+  userEmail = 'admin@anvaya.ai',
   className = '',
 }: MainLayoutProps) {
   const [currentSection, setCurrentSection] = useState<NavigationSection>(activeSection);

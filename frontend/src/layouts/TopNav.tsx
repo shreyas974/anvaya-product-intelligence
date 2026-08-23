@@ -38,10 +38,22 @@ export function TopNav({
   onOpenMobileMenu: _onOpenMobileMenu,
   onNavigate,
   userRole: _userRole = 'ADMIN',
-  userName = 'Devin Vance',
-  userEmail = 'lead.architect@enterprise.com',
+  userName = 'Master Catalog Lead',
+  userEmail = 'admin@anvaya.ai',
 }: TopNavProps) {
   const { datasets, activeDataset, activeDatasetId, setActiveDatasetId, deleteDataset } = useDataset();
+
+  let effectiveName = userName;
+  let effectiveEmail = userEmail;
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('anvaya_active_session') : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.userName) effectiveName = parsed.userName;
+      if (parsed.userEmail) effectiveEmail = parsed.userEmail;
+    }
+  } catch {}
+
 
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
   const [datasetMenuOpen, setDatasetMenuOpen] = useState(false);
@@ -239,11 +251,11 @@ export function TopNav({
         {/* User Role Pill */}
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FFD9A0] to-[#E8703A] text-white flex items-center justify-center font-bold text-xs shadow-sm">
-            {userName.charAt(0)}
+            {effectiveName.charAt(0)}
           </div>
           <div className="hidden lg:block text-left">
-            <p className="text-xs font-bold text-[#2B2320] leading-none">{userName}</p>
-            <p className="text-[10px] text-[#8A7E76] leading-none mt-1">{userEmail}</p>
+            <p className="text-xs font-bold text-[#2B2320] leading-none">{effectiveName}</p>
+            <p className="text-[10px] text-[#8A7E76] leading-none mt-1">{effectiveEmail}</p>
           </div>
         </div>
 

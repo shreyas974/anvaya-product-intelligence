@@ -56,7 +56,7 @@ class Dataset(Base):
     )
     uploaded_by: Mapped[str] = mapped_column(
         String(150),
-        default="Devin Vance",
+        default="Enterprise User",
     )
     profiling_json: Mapped[str | None] = mapped_column(
         Text,

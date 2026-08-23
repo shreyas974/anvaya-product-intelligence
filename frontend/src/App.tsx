@@ -88,9 +88,10 @@ function AppContent({ initialView = 'landing' }: AppProps) {
   }, [activeDatasetId]);
 
   const handleNavigate = (sectionId: string) => {
-    if (sectionId === 'landing') {
+    if (sectionId === 'landing' || sectionId === 'logout') {
       try {
         localStorage.removeItem('anvaya_active_session');
+        localStorage.removeItem('anvaya_auth_token');
       } catch {}
       setUserName('');
       setUserEmail('');
@@ -100,6 +101,7 @@ function AppContent({ initialView = 'landing' }: AppProps) {
     if (sectionId === 'login') {
       try {
         localStorage.removeItem('anvaya_active_session');
+        localStorage.removeItem('anvaya_auth_token');
       } catch {}
       setUserName('');
       setUserEmail('');
