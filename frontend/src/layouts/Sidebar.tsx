@@ -64,7 +64,7 @@ export function Sidebar({
   activeSection,
   onSectionChange,
   collapsed = false,
-  reviewCount = 54,
+  reviewCount = 0,
   onReplayTour,
   userRole = 'ADMIN',
   className = '',

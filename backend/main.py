@@ -7,8 +7,10 @@ from fastapi.responses import JSONResponse
 
 from backend.api.v1.router import api_router
 from backend.core.config import settings
+from backend.core.logging_config import configure_logging, add_request_logging
 from backend.db.database import Base, engine
 
+configure_logging(debug=settings.debug)
 logger = logging.getLogger("anvaya.main")
 
 
@@ -33,11 +35,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+add_request_logging(app)
 
 
 @app.exception_handler(RequestValidationError)

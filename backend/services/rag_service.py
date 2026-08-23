@@ -164,32 +164,30 @@ async def execute_grounded_copilot_query(
             "confidence": 1.0,
         }
 
-    # Attempt LLM generation if available
-    llm_available = bool(
-        os.getenv("GEMINI_API_KEY")
-        or os.getenv("GROQ_API_KEY")
-        or os.getenv("OPENROUTER_API_KEY")
-        or os.getenv("OPENAI_API_KEY")
-        or os.getenv("OLLAMA_BASE_URL")
-    )
+    # Attempt LLM generation via the unified provider layer (Gemini/Groq/OpenRouter/Ollama).
+    # This uses backend.services.ai_provider (httpx-based, already a dependency)
+    # instead of ai/models/free_llm_engine.py, which required the "openai" package
+    # that was never in backend/requirements.txt — every Copilot call was silently
+    # failing and falling back to the deterministic answer.
+    from backend.services.ai_provider import ai_generate, AIProviderError, get_active_provider
 
-    if llm_available:
+    active_provider = get_active_provider()
+    if active_provider is not None:
         try:
-            from ai.models.free_llm_engine import FreeLLMEngine
-            engine = FreeLLMEngine()
-            if engine.is_available():
-                prompt = f"{SYSTEM_PROMPT}\n\n{context_str}\n\nUser Question: {query}\n\nAnswer:"
-                resp = await engine.generate(prompt=prompt)
-                if resp.content:
-                    return {
-                        "answer": resp.content.strip(),
-                        "citations": citations,
-                        "source_type": "grounded_rag",
-                        "model_used": resp.model,
-                        "confidence": 0.95,
-                    }
-        except Exception as e:
+            prompt = f"{SYSTEM_PROMPT}\n\n{context_str}\n\nUser Question: {query}\n\nAnswer:"
+            content_resp = await ai_generate(prompt=prompt)
+            if content_resp:
+                return {
+                    "answer": content_resp.strip(),
+                    "citations": citations,
+                    "source_type": "grounded_rag",
+                    "model_used": active_provider.name,
+                    "confidence": 0.95,
+                }
+        except AIProviderError as e:
             logger.warning(f"AI Provider failed, falling back to deterministic synthesis: {e}")
+        except Exception as e:
+            logger.warning(f"Unexpected AI Provider error, falling back to deterministic synthesis: {e}")
 
     # Fallback to Deterministic Structured Grounding Response
     top_cite = citations[0] if citations else None

@@ -493,11 +493,24 @@ def delete_dataset_endpoint(
         raise HTTPException(status_code=404, detail="Dataset not found")
 
     name = d.name
+
+    # Record the deletion itself BEFORE touching child records, and preserve the
+    # dataset's prior audit trail instead of deleting it — audit logs are a
+    # compliance record and should outlive the dataset they describe.
+    db.add(AuditLog(
+        dataset_id=None,
+        event_type="DATASET_DELETE",
+        entity_type="DATASET",
+        entity_id=str(dataset_id),
+        description=f"Deleted dataset '{name}' (id={dataset_id}) and all associated products and records.",
+        details_json=json.dumps({"dataset_id": dataset_id, "dataset_name": name}),
+    ))
+    db.query(AuditLog).filter(AuditLog.dataset_id == dataset_id).update({"dataset_id": None})
+
     # Delete child records
     db.query(Product).filter(Product.dataset_id == dataset_id).delete()
     db.query(ReviewItem).filter(ReviewItem.dataset_id == dataset_id).delete()
     db.query(ValidationIssue).filter(ValidationIssue.dataset_id == dataset_id).delete()
-    db.query(AuditLog).filter(AuditLog.dataset_id == dataset_id).delete()
     db.delete(d)
     db.commit()
 
