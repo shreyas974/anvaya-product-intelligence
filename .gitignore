@@ -33,8 +33,13 @@ Thumbs.db
 tmp/
 temp/
 
-# Local datasets
+# Local datasets & uploads
 data/local/
+data/uploads/
+
+# Scratch & duplicates
+scratch/
+anvaya/
 
 # Vercel
 .vercel
