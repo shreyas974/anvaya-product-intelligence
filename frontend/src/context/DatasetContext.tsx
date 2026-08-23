@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { request } from '@/services/api/apiClient';
 
 export interface DatasetItem {
@@ -58,6 +58,7 @@ const isTestEnv =
 const DatasetContext = createContext<DatasetContextType | undefined>(undefined);
 
 export function DatasetProvider({ children }: { children: React.ReactNode }) {
+  const isMountedRef = useRef(true);
   const [datasets, setDatasets] = useState<DatasetItem[]>(() => {
     if (isTestEnv) return [];
     try {
@@ -81,25 +82,25 @@ export function DatasetProvider({ children }: { children: React.ReactNode }) {
 
   const refreshDatasets = useCallback(async (): Promise<DatasetItem[]> => {
     try {
-      setLoading(true);
+      if (isMountedRef.current) setLoading(true);
       const res = await request<any>('/datasets');
       let items: DatasetItem[] = res?.data?.items || [];
       if (!isTestEnv && (!items || items.length === 0)) {
         const rawCustom = typeof window !== 'undefined' ? localStorage.getItem('anvaya_custom_datasets') : null;
         items = rawCustom ? JSON.parse(rawCustom) : [];
       }
-      setDatasets(items);
+      if (isMountedRef.current) setDatasets(items);
 
       if (items.length > 0) {
         if (!activeDatasetId || !items.some((d) => d.id === activeDatasetId)) {
           const firstId = items[0].id;
-          setActiveDatasetIdState(firstId);
+          if (isMountedRef.current) setActiveDatasetIdState(firstId);
           if (typeof window !== 'undefined') {
             localStorage.setItem('anvaya_active_dataset_id', String(firstId));
           }
         }
       } else {
-        setActiveDatasetIdState(null);
+        if (isMountedRef.current) setActiveDatasetIdState(null);
         if (typeof window !== 'undefined') {
           localStorage.removeItem('anvaya_active_dataset_id');
         }
@@ -111,18 +112,22 @@ export function DatasetProvider({ children }: { children: React.ReactNode }) {
       }
       const rawCustom = typeof window !== 'undefined' ? localStorage.getItem('anvaya_custom_datasets') : null;
       const items = rawCustom ? JSON.parse(rawCustom) : [];
-      setDatasets(items);
+      if (isMountedRef.current) setDatasets(items);
       if (items.length > 0 && !activeDatasetId) {
-        setActiveDatasetIdState(items[0].id);
+        if (isMountedRef.current) setActiveDatasetIdState(items[0].id);
       }
       return items;
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   }, [activeDatasetId]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     refreshDatasets();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   const setActiveDatasetId = (id: number | null) => {
